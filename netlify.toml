@@ -1,0 +1,23 @@
+# Netlify Configuration for StockSight
+# This file tells Netlify how to build and deploy your site
+
+[build]
+  # The command to build your site
+  command = "npm run build"
+  # The folder to publish (where built files go)
+  publish = "dist"
+
+# This fixes page refresh issues on React apps
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
