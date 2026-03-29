@@ -1068,10 +1068,10 @@ function Paywall({onClose,onSubscribe}){
           ))}
           <div style={{borderTop:`1px solid ${BORDER}`,marginTop:14,paddingTop:14,display:"flex",justifyContent:"space-between"}}>
             <span style={fm(MUTED,9)}>MONTHLY</span>
-            <div><span style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:WHITE}}>$19</span><span style={fm(MUTED,10)}>/mo</span></div>
+            <div><span style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:WHITE}}>$29</span><span style={fm(MUTED,10)}>/mo</span></div>
           </div>
         </div>
-        <button onClick={onSubscribe} style={{width:"100%",background:`linear-gradient(135deg,${GREEN},#00cc66)`,color:"#000",border:"none",borderRadius:6,padding:"14px 0",fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,cursor:"pointer",marginBottom:10}}>START FOR $19/MO</button>
+        <button onClick={onSubscribe} style={{width:"100%",background:`linear-gradient(135deg,${GREEN},#00cc66)`,color:"#000",border:"none",borderRadius:6,padding:"14px 0",fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,cursor:"pointer",marginBottom:10}}>START FOR $29/MO</button>
         <button onClick={onClose} style={{width:"100%",background:"none",border:"none",color:MUTED,fontFamily:"'Space Mono',monospace",fontSize:9,cursor:"pointer",padding:8}}>Maybe later</button>
       </div>
     </div>
@@ -1109,16 +1109,30 @@ export default function App(){
 
   const handleSubscribe=async()=>{
     try{
-      const{loadStripe}=await import("https://js.stripe.com/v3/");
-      const stripe=await loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-      await stripe.redirectToCheckout({
+      // Load Stripe script dynamically
+      if(!window.Stripe){
+        await new Promise((resolve,reject)=>{
+          const script=document.createElement("script");
+          script.src="https://js.stripe.com/v3/";
+          script.onload=resolve;
+          script.onerror=reject;
+          document.head.appendChild(script);
+        });
+      }
+      const stripe=window.Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+      const result=await stripe.redirectToCheckout({
         lineItems:[{price:import.meta.env.VITE_STRIPE_PRICE_ID,quantity:1}],
         mode:"subscription",
         successUrl:window.location.origin+"?subscribed=true",
         cancelUrl:window.location.origin,
       });
+      if(result.error){
+        console.error("Stripe checkout error:",result.error.message);
+        alert("Payment error: "+result.error.message);
+      }
     }catch(e){
       console.error("Stripe error:",e);
+      alert("Could not open checkout. Please try again.");
     }
   };
 
