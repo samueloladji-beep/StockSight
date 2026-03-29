@@ -233,7 +233,7 @@ function getMarketStatus() {
 async function callClaude(system, user) {
   const res = await fetch("https://api.anthropic.com/v1/messages",{
     method:"POST", headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_API_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, system,
+    body:JSON.stringify({ model:(import.meta.env.VITE_CLAUDE_MODEL||"claude-sonnet-4-20250514"), max_tokens:1000, system,
       tools:[{type:"web_search_20250305",name:"web_search"}],
       messages:[{role:"user",content:user}] })
   });
@@ -248,7 +248,7 @@ async function callPerplexity(system, user) {
     method:"POST",
     headers:{"Content-Type":"application/json","Authorization":`Bearer ${import.meta.env.VITE_PERPLEXITY_API_KEY}`},
     body:JSON.stringify({
-      model:"llama-3.1-sonar-large-128k-online",
+      model:(import.meta.env.VITE_PERPLEXITY_MODEL||"llama-3.1-sonar-large-128k-online"),
       messages:[
         {role:"system",content:system},
         {role:"user",content:user}
@@ -269,7 +269,7 @@ async function callOpenAI(system, user) {
     method:"POST",
     headers:{"Content-Type":"application/json","Authorization":`Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`},
     body:JSON.stringify({
-      model:"gpt-4o",
+      model:(import.meta.env.VITE_OPENAI_MODEL||"gpt-4o"),
       max_tokens:1000,
       messages:[
         {role:"system",content:system},
@@ -1321,6 +1321,7 @@ export default function App(){
           <div style={{display:"flex",alignItems:"baseline",gap:6}}>
             <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:WHITE,letterSpacing:4}}>STOCK</span>
             <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:GREEN,letterSpacing:4,textShadow:`0 0 16px ${GREEN}55`}}>SIGHT</span>
+            <span style={fm(MUTED,12,{letterSpacing:2,marginLeft:6})}>AI RESEARCH TERMINAL v5 • CLAUDE + PERPLEXITY + GPT-4</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:14}}>
             <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:MUTED,fontWeight:500}}>{etTime}</span>
