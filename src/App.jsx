@@ -1321,7 +1321,6 @@ export default function App(){
           <div style={{display:"flex",alignItems:"baseline",gap:6}}>
             <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:WHITE,letterSpacing:4}}>STOCK</span>
             <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:GREEN,letterSpacing:4,textShadow:`0 0 16px ${GREEN}55`}}>SIGHT</span>
-            <span style={fm(MUTED,12,{letterSpacing:2,marginLeft:6})}>AI RESEARCH TERMINAL v5 • CLAUDE + PERPLEXITY + GPT-4</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:14}}>
             <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:MUTED,fontWeight:500}}>{etTime}</span>
