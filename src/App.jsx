@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+ import { useState, useEffect, useCallback } from "react";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const FREE_LIMIT = 2;
@@ -14,8 +14,8 @@ const CYAN   = "#00d4ff";
 const ORANGE = "#ff8c42";
 const PINK   = "#ff6eb4";
 const WHITE  = "#e8edf5";
-const MUTED  = "#3a4455";
-const DIM    = "#111520";
+const MUTED  = "#8a9ab5";
+const DIM    = "#0e1420";
 
 const CONFIDENCE_MAP = {
   "STRONG BUY":  { color:"#00f5a0", pct:"85–100%", label:"STRONG BUY"  },
@@ -297,7 +297,7 @@ Return ONLY valid JSON (no markdown, no backticks):
 }`;
 
 // ─── UI ATOMS ─────────────────────────────────────────────────────────────────
-const fm = (color,size=9,extra={})=>({fontFamily:"'Space Mono',monospace",fontSize:size,color,...extra});
+const fm = (color,size=9,extra={})=>({fontFamily:"'Inter','Space Mono',monospace",fontSize:size,color,...extra});
 
 function Pulse({color,size=7}){
   return <span style={{display:"inline-block",width:size,height:size,borderRadius:"50%",background:color,boxShadow:`0 0 8px ${color}`,animation:"pulseDot 1.4s ease-in-out infinite"}}/>;
@@ -309,7 +309,7 @@ function ScoreRow({label,value,color}){
   return(
     <div style={{marginBottom:6}}>
       <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-        <span style={fm(MUTED,8,{letterSpacing:1,textTransform:"uppercase"})}>{label}</span>
+        <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,fontWeight:600,color:MUTED,letterSpacing:0.5,textTransform:"uppercase"}}>{label}</span>
         <span style={fm(color,9)}>{value}/100</span>
       </div>
       <div style={{background:DIM,borderRadius:2,height:3}}>
@@ -388,12 +388,12 @@ function TickerTape({marketStatus}){
   return(
     <div style={{background:"#04060a",borderBottom:`1px solid ${BORDER}`,overflow:"hidden",padding:"5px 0",display:"flex",alignItems:"center"}}>
       <div style={{minWidth:160,padding:"0 14px",borderRight:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:7,flexShrink:0}}>
-        <Pulse color={marketStatus.color}/><span style={fm(marketStatus.color,9,{letterSpacing:1,whiteSpace:"nowrap"})}>{marketStatus.label}</span>
+        <Pulse color={marketStatus.color}/><span style={{fontFamily:"'Inter',sans-serif",fontSize:10,fontWeight:600,color:marketStatus.color,letterSpacing:0.5,whiteSpace:"nowrap"}}>{marketStatus.label}</span>
       </div>
       <div style={{overflow:"hidden",flex:1}}>
         <div style={{display:"flex",gap:28,whiteSpace:"nowrap",animation:"tickerScroll 35s linear infinite",width:"max-content"}}>
           {[...items,...items].map((item,i)=>(
-            <span key={i} style={fm(item.v>=0?GREEN:RED,10)}>{item.t} {item.v>=0?"+":""}{item.v}%</span>
+            <span key={i} style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:500,color:item.v>=0?GREEN:RED}}>{item.t} {item.v>=0?"+":""}{item.v}%</span>
           ))}
         </div>
       </div>
@@ -403,11 +403,11 @@ function TickerTape({marketStatus}){
 function Legend(){
   return(
     <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:7,padding:"11px 16px",display:"flex",gap:16,flexWrap:"wrap",alignItems:"center"}}>
-      <span style={fm(MUTED,8,{letterSpacing:1,textTransform:"uppercase",marginRight:4})}>Confidence Scale:</span>
+      <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:600,color:MUTED,letterSpacing:1,textTransform:"uppercase",marginRight:4}}>Confidence Scale:</span>
       {Object.entries(CONFIDENCE_MAP).map(([v,c])=>(
         <div key={v} style={{display:"flex",alignItems:"center",gap:5}}>
           <div style={{width:8,height:8,borderRadius:"50%",background:c.color,boxShadow:`0 0 6px ${c.color}`}}/>
-          <span style={fm(c.color,8)}>{c.pct} — {c.label}</span>
+          <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:500,color:c.color}}>{c.pct} — {c.label}</span>
         </div>
       ))}
     </div>
@@ -1122,9 +1122,9 @@ export default function App(){
   return(
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        body{background:${BG};color:${WHITE};font-family:'Space Mono',monospace;}
+        body{background:${BG};color:${WHITE};font-family:'Inter','Space Mono',monospace;}
         ::-webkit-scrollbar{width:4px;background:${BG};}
         ::-webkit-scrollbar-thumb{background:${DIM};border-radius:4px;}
         input,select,button{outline:none;}
