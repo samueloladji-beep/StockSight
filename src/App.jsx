@@ -1107,7 +1107,7 @@ export default function App(){
     setAnalysesUsed(p=>p+1);return true;
   },[subscribed,analysesUsed]);
 
-  const handleSubscribe=()=>{window.location.href="https://buy.stripe.com/test_00w8w05Ma4oMdhC4Eq9fW00";};
+  const handleSubscribe=()=>{window.location.href="https://buy.stripe.com/eVqeVca5teIn8EB7M4ow00";};
 
   const filteredStocks=ALL_STOCKS.filter(s=>{
     if(sectorFilter!=="All"&&s.sector!==sectorFilter)return false;
