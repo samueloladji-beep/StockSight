@@ -1107,34 +1107,7 @@ export default function App(){
     setAnalysesUsed(p=>p+1);return true;
   },[subscribed,analysesUsed]);
 
-  const handleSubscribe=async()=>{
-    try{
-      // Load Stripe script dynamically
-      if(!window.Stripe){
-        await new Promise((resolve,reject)=>{
-          const script=document.createElement("script");
-          script.src="https://js.stripe.com/v3/";
-          script.onload=resolve;
-          script.onerror=reject;
-          document.head.appendChild(script);
-        });
-      }
-      const stripe=window.Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-      const result=await stripe.redirectToCheckout({
-        lineItems:[{price:import.meta.env.VITE_STRIPE_PRICE_ID,quantity:1}],
-        mode:"subscription",
-        successUrl:window.location.origin+"?subscribed=true",
-        cancelUrl:window.location.origin,
-      });
-      if(result.error){
-        console.error("Stripe checkout error:",result.error.message);
-        alert("Payment error: "+result.error.message);
-      }
-    }catch(e){
-      console.error("Stripe error:",e);
-      alert("Could not open checkout. Please try again.");
-    }
-  };
+  const handleSubscribe=()=>{window.location.href="https://buy.stripe.com/test_00w8w05Ma4oMdhC4Eq9fW00";};
 
   const filteredStocks=ALL_STOCKS.filter(s=>{
     if(sectorFilter!=="All"&&s.sector!==sectorFilter)return false;
