@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const FREE_LIMIT = 999;
+const BETA_MODE = true; // ← Change to false after beta test ends
 const BG     = "#07090d";
 const CARD   = "#0d1117";
 const BORDER = "#161c26";
@@ -158,6 +159,71 @@ const SMART_MONEY_TRADERS = [
     historicalReturn: "+25%+ avg annual over career",
     dataSource: "SEC EDGAR 13F Filings",
     avatar: "DT",
+    avatarColor: CYAN,
+  },
+  {
+    id: "warren_buffett",
+    name: "Warren Buffett",
+    role: "CEO, Berkshire Hathaway",
+    category: "HEDGE FUND",
+    categoryColor: GOLD,
+    track: "Berkshire Hathaway 13F SEC Filings",
+    knownFor: "World's greatest value investor. Berkshire's 13F filings are among the most watched in history. Known for long-term concentrated positions in consumer, financial, and energy sectors.",
+    historicalReturn: "+20% avg annual over 50+ years vs S&P ~10%",
+    dataSource: "SEC EDGAR 13F Filings / Berkshire Hathaway Annual Reports",
+    avatar: "WB",
+    avatarColor: GOLD,
+  },
+  {
+    id: "ray_dalio",
+    name: "Ray Dalio",
+    role: "Founder, Bridgewater Associates",
+    category: "HEDGE FUND",
+    categoryColor: BLUE,
+    track: "SEC 13F Quarterly Filings",
+    knownFor: "Founder of world's largest hedge fund. Known for 'All Weather' portfolio strategy and macro-driven trades. Predicted 2008 crash. Heavy diversification across global assets.",
+    historicalReturn: "+12% avg annual, world's most consistent hedge fund",
+    dataSource: "SEC EDGAR 13F Filings",
+    avatar: "RD",
+    avatarColor: BLUE,
+  },
+  {
+    id: "cathie_wood",
+    name: "Cathie Wood",
+    role: "CEO & CIO, ARK Invest",
+    category: "HEDGE FUND",
+    categoryColor: PURPLE,
+    track: "ARK Daily Trade Disclosures (real-time)",
+    knownFor: "Most transparent fund manager — ARK publishes ALL trades daily. Focuses on disruptive innovation: AI, robotics, genomics, fintech, space. Known for high-conviction concentrated bets.",
+    historicalReturn: "+152% in 2020; high volatility, high potential",
+    dataSource: "ARK Invest Daily Holdings / SEC Filings",
+    avatar: "CW",
+    avatarColor: PURPLE,
+  },
+  {
+    id: "nancy_pelosi_2",
+    name: "Dan Crenshaw",
+    role: "U.S. Representative (R-TX)",
+    category: "CONGRESS",
+    categoryColor: BLUE,
+    track: "House STOCK Act Disclosures",
+    knownFor: "Active congressional trader with focus on energy and defense sectors. Sits on key committees with oversight of industries he trades in.",
+    historicalReturn: "Consistently outperforms S&P in disclosed trades",
+    dataSource: "House Financial Disclosures",
+    avatar: "DC",
+    avatarColor: BLUE,
+  },
+  {
+    id: "israel_englander",
+    name: "Israel Englander",
+    role: "Founder & CEO, Millennium Management",
+    category: "HEDGE FUND",
+    categoryColor: CYAN,
+    track: "SEC 13F Quarterly Filings",
+    knownFor: "One of the most sophisticated quant-driven hedge funds. $60B+ AUM. Known for multi-strategy approach and exceptional risk-adjusted returns across all market conditions.",
+    historicalReturn: "+20%+ avg annual since 1989",
+    dataSource: "SEC EDGAR 13F Filings",
+    avatar: "IE",
     avatarColor: CYAN,
   },
 ];
@@ -406,6 +472,259 @@ const DYNAMIC_WATCHLIST_SYSTEM = `You are a quantitative portfolio analyst. Base
       "confidence": 0-100
     }
   ]
+}`;
+
+
+const DYNAMIC_IPO_SYSTEM = `You are an IPO research analyst with access to real-time market data. Search for the most current upcoming IPOs and recent IPO filings. Return ONLY valid JSON (no markdown):
+{
+  "lastUpdated": "Month DD YYYY",
+  "marketNote": "1 sentence on current IPO market conditions",
+  "ipos": [
+    {
+      "name": "Company Name",
+      "ticker": "Expected ticker or TBD",
+      "sector": "Sector",
+      "description": "What the company does and why it matters",
+      "estTiming": "Q1 2026 or specific date if known",
+      "valuation": "$XXB estimated valuation",
+      "lead_underwriter": "Goldman Sachs / Morgan Stanley etc",
+      "profitPotential": "HIGH"|"MEDIUM"|"SPECULATIVE",
+      "buyConfidence": 0-100,
+      "verdict": "STRONG BUY"|"BUY"|"WATCH"|"AVOID",
+      "whyNow": "Key catalyst or reason this IPO is noteworthy right now",
+      "risks": "Main risk in 1 sentence"
+    }
+  ]
+}`;
+
+const DYNAMIC_GEMS_SYSTEM = `You are a small/mid-cap stock analyst specializing in finding undervalued breakout opportunities. Search for stocks that are currently flying under the radar but have strong fundamentals and catalysts for significant price appreciation. Focus on stocks under $20B market cap with high growth potential. Return ONLY valid JSON (no markdown):
+{
+  "lastUpdated": "Month DD YYYY",
+  "marketContext": "1 sentence on why these gems are compelling right now",
+  "gems": [
+    {
+      "ticker": "XXXX",
+      "name": "Full Company Name",
+      "sector": "Sector",
+      "marketCap": "$XB",
+      "why": "Why this is a hidden gem — specific catalyst or undervaluation thesis",
+      "catalyst": "Upcoming catalyst that could drive price up",
+      "upside": "+XX% estimated upside",
+      "timeframe": "3-6 months",
+      "confidence": 0-100,
+      "verdict": "STRONG BUY"|"BUY"|"SPECULATIVE",
+      "risk": "Main risk in 1 sentence"
+    }
+  ]
+}`;
+
+const DYNAMIC_SMART_MONEY_SYSTEM = `You are a financial intelligence analyst tracking congressional and institutional trading disclosures. Search for the most recent STOCK Act filings from Congress members and SEC 13F filings from top hedge funds. Find any NEW trades, position changes, or notable activity disclosed in the last 45 days. Return ONLY valid JSON (no markdown):
+{
+  "lastUpdated": "Month DD YYYY HH:MM",
+  "totalDisclosures": 0,
+  "recentActivity": [
+    {
+      "trader": "Full Name",
+      "role": "U.S. Senator / Hedge Fund Manager etc",
+      "category": "CONGRESS"|"HEDGE FUND",
+      "trade": "Bought/Sold TICKER",
+      "amount": "$XX,000 - $XXX,000",
+      "date": "Month DD YYYY",
+      "significance": "Why this trade matters — what signal it sends",
+      "followSignal": "STRONG BUY"|"BUY"|"WATCH"|"NEUTRAL",
+      "confidence": 0-100
+    }
+  ],
+  "hotStocks": ["TICKER1", "TICKER2", "TICKER3"],
+  "summary": "2 sentence summary of what smart money is doing right now"
+}`;
+
+const DYNAMIC_OPTIONS_SYSTEM = `You are an elite options trader and market analyst. Search for the best options trading opportunities RIGHT NOW based on: unusual options activity (UOA), high implied volatility relative to historical volatility, upcoming earnings catalysts, technical breakout setups, and unusual call/put flow. Return ONLY valid JSON (no markdown):
+{
+  "lastUpdated": "Month DD YYYY HH:MM",
+  "marketVIX": "XX.X",
+  "marketCondition": "LOW VOL"|"NORMAL"|"HIGH VOL"|"EXTREME",
+  "topOpportunities": [
+    {
+      "ticker": "XXXX",
+      "name": "Company Name",
+      "strategy": "Bull Call Spread / Long Call / Cash Secured Put / Iron Condor etc",
+      "signal": "Why this options trade is compelling right now",
+      "strike": "$XXX",
+      "expiry": "Month DD YYYY",
+      "type": "CALL"|"PUT"|"SPREAD",
+      "riskLevel": "CONSERVATIVE"|"MODERATE"|"AGGRESSIVE",
+      "maxProfit": "+XX%",
+      "maxLoss": "-XX%",
+      "confidence": 0-100,
+      "catalyst": "Specific upcoming catalyst driving this trade",
+      "unusualActivity": true|false
+    }
+  ],
+  "unusualActivityAlerts": [
+    {
+      "ticker": "XXXX",
+      "activity": "Description of unusual options flow",
+      "bullish": true|false,
+      "size": "$XXM in contracts"
+    }
+  ]
+}`;
+
+
+// ─── DAY TRADING SYSTEM PROMPTS ──────────────────────────────────────────────
+
+const MOMENTUM_MOVERS_SYSTEM = `You are an elite day trading analyst with real-time market access. Search for stocks that are moving significantly RIGHT NOW or in after-hours/pre-market trading. Include stocks with earnings releases, news catalysts, unusual volume, and technical breakouts. Return ONLY valid JSON (no markdown):
+{
+  "timestamp": "Month DD YYYY HH:MM ET",
+  "marketSession": "PRE-MARKET"|"REGULAR"|"AFTER-HOURS"|"CLOSED",
+  "marketMood": "RISK-ON"|"RISK-OFF"|"MIXED"|"VOLATILE",
+  "topMovers": [
+    {
+      "ticker": "XXXX",
+      "name": "Company Name",
+      "sector": "Sector",
+      "price": "$XXX.XX",
+      "change": "+X.XX",
+      "changePct": "+XX.X%",
+      "direction": "UP"|"DOWN",
+      "volume": "XXM (Xх avg)",
+      "catalyst": "Exact reason for the move — earnings beat/miss, FDA approval, contract win, analyst upgrade, etc",
+      "session": "REGULAR"|"AFTER-HOURS"|"PRE-MARKET",
+      "momentum": "STRONG"|"BUILDING"|"FADING",
+      "entryZone": "$XXX - $XXX",
+      "target1": "$XXX",
+      "target2": "$XXX",
+      "stopLoss": "$XXX",
+      "riskReward": "1:X",
+      "tradeType": "LONG"|"SHORT",
+      "confidence": 0-100,
+      "signal": "STRONG BUY"|"BUY"|"WATCH"|"SHORT"|"STRONG SHORT"
+    }
+  ],
+  "marketHighlight": "Most important market development happening right now in 2 sentences"
+}`;
+
+const SCALP_SETUPS_SYSTEM = `You are a professional scalp trader specializing in intraday momentum plays. Search for the best scalping opportunities right now — stocks with clear technical setups, high liquidity, and catalyst-driven momentum for quick 1-5% gains. Return ONLY valid JSON (no markdown):
+{
+  "timestamp": "Month DD YYYY HH:MM ET",
+  "session": "PRE-MARKET"|"REGULAR"|"AFTER-HOURS"|"CLOSED",
+  "setups": [
+    {
+      "ticker": "XXXX",
+      "name": "Company Name",
+      "setupType": "Breakout"|"Pullback"|"Gap and Go"|"Reversal"|"Squeeze Play"|"Earnings Play",
+      "timeframe": "1min"|"5min"|"15min",
+      "entry": "$XXX.XX",
+      "target": "$XXX.XX",
+      "stopLoss": "$XXX.XX",
+      "potentialGain": "+X.X%",
+      "maxLoss": "-X.X%",
+      "riskReward": "1:X",
+      "keyLevel": "$XXX (support/resistance)",
+      "catalyst": "What is driving this setup",
+      "volume": "Current volume vs average",
+      "urgency": "NOW"|"WATCH"|"PENDING",
+      "confidence": 0-100,
+      "notes": "Key things to watch — what invalidates this setup"
+    }
+  ]
+}`;
+
+const SHORT_SQUEEZE_SYSTEM = `You are a short squeeze specialist. Search for stocks with high short interest that are showing signs of an active or imminent short squeeze. Look for: high short float %, rising price despite sell pressure, increasing volume, positive catalysts, and gamma squeeze potential. Return ONLY valid JSON (no markdown):
+{
+  "timestamp": "Month DD YYYY HH:MM ET",
+  "candidates": [
+    {
+      "ticker": "XXXX",
+      "name": "Company Name",
+      "shortFloat": "XX%",
+      "daysTocover": "X.X days",
+      "shortInterest": "XXM shares",
+      "squeezeStage": "BUILDING"|"ACTIVE"|"IMMINENT"|"COOLING",
+      "catalyst": "What could trigger or is triggering the squeeze",
+      "priceVs52wHigh": "XX% below 52w high",
+      "institutionalSupport": "High"|"Medium"|"Low",
+      "socialBuzz": "High"|"Medium"|"Low",
+      "entryZone": "$XXX - $XXX",
+      "squeezeTarget": "$XXX",
+      "stopLoss": "$XXX",
+      "confidence": 0-100,
+      "risk": "Main risk to this squeeze thesis"
+    }
+  ],
+  "activeSqueezes": ["TICKER1", "TICKER2"],
+  "summary": "1 sentence on current short squeeze environment"
+}`;
+
+const AFTERHOURS_SYSTEM = `You are a market analyst specializing in after-hours and pre-market trading. Search for stocks with significant price movements happening RIGHT NOW in after-hours or pre-market trading. Find earnings releases, news events, analyst actions, and any other catalysts driving after-hours moves. Return ONLY valid JSON (no markdown):
+{
+  "timestamp": "Month DD YYYY HH:MM ET",
+  "session": "AFTER-HOURS"|"PRE-MARKET"|"CLOSED",
+  "bigMovers": [
+    {
+      "ticker": "XXXX",
+      "name": "Company Name",
+      "regularClose": "$XXX.XX",
+      "afterHoursPrice": "$XXX.XX",
+      "afterHoursChange": "+X.XX",
+      "afterHoursPct": "+XX.X%",
+      "direction": "UP"|"DOWN",
+      "catalyst": "Exact reason — earnings beat EPS by $X.XX, revenue $XB vs $XB expected, guidance raised/lowered, etc",
+      "catalystType": "EARNINGS"|"NEWS"|"ANALYST"|"FDA"|"CONTRACT"|"OTHER",
+      "volume": "After-hours volume",
+      "gapType": "EARNINGS_BEAT"|"EARNINGS_MISS"|"NEWS_POSITIVE"|"NEWS_NEGATIVE"|"UPGRADE"|"DOWNGRADE",
+      "nextDayOutlook": "BULLISH"|"BEARISH"|"UNCERTAIN",
+      "dayTradePlan": "How to trade this tomorrow at open — gap and go vs fade strategy",
+      "keyLevels": "Key price levels to watch at open",
+      "confidence": 0-100
+    }
+  ],
+  "earningsTonight": [
+    {
+      "ticker": "XXXX",
+      "name": "Company Name",
+      "reportTime": "After Close"|"Before Open",
+      "epsEstimate": "$X.XX",
+      "revenueEstimate": "$XB",
+      "impliedMove": "±X%",
+      "optionsSignal": "BULLISH"|"BEARISH"|"NEUTRAL"
+    }
+  ],
+  "tomorrowWatchlist": ["TICKER1","TICKER2","TICKER3"],
+  "summary": "2 sentences on key after-hours developments and what to watch tomorrow"
+}`;
+
+const PREMARKET_SYSTEM = `You are a pre-market trading specialist. Search for stocks showing significant pre-market activity and identify the best day trading opportunities for today's market open. Return ONLY valid JSON (no markdown):
+{
+  "timestamp": "Month DD YYYY HH:MM ET",
+  "marketOutlook": "BULLISH OPEN"|"BEARISH OPEN"|"FLAT OPEN"|"VOLATILE OPEN",
+  "futuresSnapshot": {
+    "sp500": "+/-X.X%",
+    "nasdaq": "+/-X.X%",
+    "dow": "+/-X.X%",
+    "vix": "XX.X"
+  },
+  "preMarketMovers": [
+    {
+      "ticker": "XXXX",
+      "name": "Company Name",
+      "preMarketPrice": "$XXX.XX",
+      "preMarketChange": "+/-X.XX",
+      "preMarketPct": "+/-XX.X%",
+      "catalyst": "What happened overnight or this morning",
+      "gapDirection": "UP"|"DOWN",
+      "gapSize": "SMALL (<2%)"|"MEDIUM (2-5%)"|"LARGE (5-10%)"|"HUGE (10%+)",
+      "tradeStrategy": "Gap and Go"|"Gap Fill"|"Wait and See",
+      "keyOpenLevel": "$XXX",
+      "firstTarget": "$XXX",
+      "stopLoss": "$XXX",
+      "confidence": 0-100
+    }
+  ],
+  "earningsBeforeOpen": ["TICKER1","TICKER2"],
+  "economicEvents": "Key economic data releases today that could move markets",
+  "dayTradingBias": "Overall direction bias for today's session based on pre-market data"
 }`;
 
 // ─── UI ATOMS ─────────────────────────────────────────────────────────────────
@@ -850,6 +1169,70 @@ function SmartMoneyTab({ subscribed, onPaywall }) {
         </p>
       </div>
 
+      {/* Live Activity Section */}
+      <div style={{background:`${GOLD}08`,border:`1px solid ${GOLD}33`,borderRadius:8,padding:18,marginBottom:24}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:liveActivity?14:0}}>
+          <div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:GOLD,letterSpacing:2,marginBottom:3}}>⚡ Live Activity Feed</div>
+            <div style={fm(MUTED,12)}>Most recent congressional trades & hedge fund moves — updated in real time</div>
+          </div>
+          <button onClick={onRefreshActivity} style={{background:`${GOLD}18`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"8px 16px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+            {activityLoading?"FETCHING...":"🔄 REFRESH ACTIVITY"}
+          </button>
+        </div>
+
+        {activityLoading&&(
+          <div style={{textAlign:"center",padding:"16px 0"}}>
+            <div style={fm(GOLD,12,{letterSpacing:1,marginBottom:8,fontWeight:600})}>SCANNING LATEST DISCLOSURES & FILINGS...</div>
+            <div style={{display:"flex",justifyContent:"center",gap:3}}>{Array.from({length:7},(_,i)=><div key={i} style={{width:3,height:16,background:GOLD,borderRadius:2,animation:`barAnim 0.9s ease-in-out ${i*0.1}s infinite alternate`,opacity:0.8}}/>)}</div>
+          </div>
+        )}
+
+        {!liveActivity&&!activityLoading&&(
+          <div style={{textAlign:"center",padding:"12px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>
+            Click "Refresh Activity" to see the latest smart money moves
+          </div>
+        )}
+
+        {liveActivity&&!activityLoading&&(
+          <div>
+            <div style={{background:DIM,borderRadius:6,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+              <p style={fm(MUTED,12,{flex:1,lineHeight:1.6})}>{liveActivity.summary}</p>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {liveActivity.hotStocks?.map((s,i)=>(
+                  <div key={i} style={{background:`${GREEN}18`,border:`1px solid ${GREEN}33`,borderRadius:4,padding:"3px 10px",fontFamily:"'Bebas Neue',cursive",fontSize:14,color:GREEN,letterSpacing:1}}>{s}</div>
+                ))}
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:10}}>
+              {liveActivity.recentActivity?.map((act,i)=>{
+                const signalColor = act.followSignal==="STRONG BUY"?GREEN:act.followSignal==="BUY"?GREEN:act.followSignal==="WATCH"?GOLD:MUTED;
+                return(
+                  <div key={i} style={{background:"#0a0e16",border:`1px solid ${signalColor}33`,borderRadius:6,padding:"12px 14px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                      <div>
+                        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:WHITE,marginBottom:2}}>{act.trader}</div>
+                        <div style={fm(MUTED,11)}>{act.role}</div>
+                      </div>
+                      <Tag label={act.category} color={act.category==="CONGRESS"?BLUE:GOLD}/>
+                    </div>
+                    <div style={{background:DIM,borderRadius:4,padding:"6px 10px",marginBottom:8,borderLeft:`2px solid ${signalColor}`}}>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:15,color:signalColor,letterSpacing:1,marginBottom:2}}>{act.trade}</div>
+                      <div style={fm(MUTED,11)}>{act.amount} • {act.date}</div>
+                    </div>
+                    <p style={fm("#8a9aaa",12,{lineHeight:1.6,marginBottom:8})}>{act.significance}</p>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <Tag label={act.followSignal} color={signalColor}/>
+                      <Tag label={`${act.confidence}% CONFIDENCE`} color={signalColor}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Trader grid */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(360px,1fr))", gap:18 }}>
         {filtered.map(trader => (
@@ -937,14 +1320,55 @@ function OptionTradeCard({trade,index}){
   );
 }
 
+function OptionsResult({result}){
+  if(!result) return null;
+  const bias = result.marketBias?(BIAS_CONFIG[result.marketBias]||BIAS_CONFIG.NEUTRAL):null;
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      {bias&&(
+        <div style={{background:DIM,borderRadius:6,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          <span style={{fontSize:18}}>{bias.icon}</span>
+          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:bias.color,letterSpacing:2}}>{result.marketBias} BIAS</span>
+          {result.ivRank&&<Tag label={`IV Rank: ${result.ivRank}`} color={MUTED}/>}
+          {result.nextEarnings&&<Tag label={`Earnings: ${result.nextEarnings}`} color={GOLD}/>}
+        </div>
+      )}
+      <div>
+        <div style={fm(MUTED,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:8})}>3 Trade Setups</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>{result.trades?.map((trade,i)=><OptionTradeCard key={i} trade={trade} index={i+1}/>)}</div>
+      </div>
+    </div>
+  );
+}
+
 function OptionsTab({subscribed,onPaywall}){
   const [selectedTicker,setSelectedTicker]=useState("NVDA");
   const [state,setState]=useState("idle");
   const [result,setResult]=useState(null);
   const [error,setError]=useState(null);
+  const [customOptTicker,setCustomOptTicker]=useState("");
+  const [customOptLoading,setCustomOptLoading]=useState(false);
+  const [customOptResult,setCustomOptResult]=useState(null);
   const selectedStock=OPTIONS_UNIVERSE.find(s=>s.ticker===selectedTicker)||OPTIONS_UNIVERSE[0];
+
+  const analyzeCustomOptions = async () => {
+    if(!customOptTicker.trim()) return;
+    if(!subscribed&&!BETA_MODE){onPaywall();return;}
+    setCustomOptLoading(true);
+    setCustomOptResult(null);
+    const ticker = customOptTicker.toUpperCase().trim();
+    try{
+      const r = await callAI(OPTIONS_SYSTEM,
+        `Generate 3 options setups for ${ticker}. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}. Search for: current stock price, next earnings date, current implied volatility vs historical volatility, recent price action, key support/resistance levels, any upcoming catalysts. Provide 3 distinct trades — conservative, moderate, aggressive.`
+      );
+      setCustomOptResult({ticker, result: r});
+    }catch(e){
+      alert("Could not analyze options for "+ticker+". Check the ticker and try again.");
+    }
+    setCustomOptLoading(false);
+  };
   const run=async()=>{
-    if(!subscribed){onPaywall();return;}
+    if(!subscribed&&!BETA_MODE){onPaywall();return;}
     setState("loading");setResult(null);setError(null);
     try{
       const r=await callAI(OPTIONS_SYSTEM,`Generate 3 options setups for ${selectedTicker} (${selectedStock.name}). Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}. Search for next earnings date, current IV vs HV, recent price action, key levels. Provide 3 distinct trades — conservative, moderate, aggressive.`);
@@ -956,8 +1380,134 @@ function OptionsTab({subscribed,onPaywall}){
     <div>
       <div style={{marginBottom:20}}>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:ORANGE,letterSpacing:3,textShadow:`0 0 20px ${ORANGE}44`,marginBottom:6}}>Options Trading 📊</div>
-        <p style={fm(MUTED,10,{lineHeight:1.7,maxWidth:640})}>AI-powered options trade suggestions based on live earnings dates, IV, technicals, and market catalysts. 3 setups per stock — conservative to aggressive.</p>
+        <p style={fm(MUTED,12,{lineHeight:1.7,maxWidth:640})}>AI-powered options trade suggestions based on live earnings dates, IV, technicals, and market catalysts. 3 setups per stock — conservative to aggressive.</p>
       </div>
+
+      {/* ── HOT OPTIONS OPPORTUNITIES ─────────────────────────────── */}
+      <div style={{background:CARD,border:`1px solid ${ORANGE}33`,borderRadius:8,padding:18,marginBottom:22}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:14}}>
+          <div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:ORANGE,letterSpacing:2,marginBottom:3}}>🔥 Hot Options Right Now</div>
+            <div style={fm(MUTED,12)}>AI-detected unusual options activity, high-profit setups, and upcoming earnings plays</div>
+          </div>
+          <button onClick={onFetchDynamic} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"8px 16px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+            {dynamicOptionsLoading?"SCANNING...":"🔄 SCAN MARKET"}
+          </button>
+        </div>
+
+        {dynamicOptionsLoading&&(
+          <div style={{textAlign:"center",padding:"16px 0"}}>
+            <div style={fm(ORANGE,12,{letterSpacing:1,marginBottom:8,fontWeight:600})}>SCANNING FOR UNUSUAL OPTIONS ACTIVITY...</div>
+            <div style={{display:"flex",justifyContent:"center",gap:3}}>{Array.from({length:7},(_,i)=><div key={i} style={{width:3,height:16,background:ORANGE,borderRadius:2,animation:`barAnim 0.9s ease-in-out ${i*0.1}s infinite alternate`,opacity:0.8}}/>)}</div>
+            <div style={fm(MUTED,11,{marginTop:8})}>Searching for high-profit options setups and unusual activity...</div>
+          </div>
+        )}
+
+        {!dynamicOptions&&!dynamicOptionsLoading&&(
+          <div style={{textAlign:"center",padding:"12px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>
+            Click "Scan Market" to find today's highest-profit options opportunities
+          </div>
+        )}
+
+        {dynamicOptions&&!dynamicOptionsLoading&&(
+          <div>
+            {/* Market conditions banner */}
+            <div style={{background:DIM,borderRadius:6,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8,alignItems:"center"}}>
+              <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                <div>
+                  <div style={fm(MUTED,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:2})}>VIX</div>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:ORANGE}}>{dynamicOptions.marketVIX}</div>
+                </div>
+                <Tag label={dynamicOptions.marketCondition} color={dynamicOptions.marketCondition==="LOW VOL"?GREEN:dynamicOptions.marketCondition==="HIGH VOL"?RED:GOLD}/>
+              </div>
+              <div style={fm(MUTED,11)}>Updated: {dynamicOptions.lastUpdated}</div>
+            </div>
+
+            {/* Unusual Activity Alerts */}
+            {dynamicOptions.unusualActivityAlerts?.length>0&&(
+              <div style={{marginBottom:16}}>
+                <div style={fm(RED,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:10})}>⚡ Unusual Activity Alerts</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {dynamicOptions.unusualActivityAlerts.map((alert,i)=>(
+                    <div key={i} style={{background:DIM,borderRadius:5,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,borderLeft:`2px solid ${alert.bullish?GREEN:RED}`}}>
+                      <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                        <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:WHITE,letterSpacing:1}}>{alert.ticker}</span>
+                        <Tag label={alert.bullish?"BULLISH FLOW":"BEARISH FLOW"} color={alert.bullish?GREEN:RED}/>
+                        <span style={fm(MUTED,12)}>{alert.activity}</span>
+                      </div>
+                      <Tag label={alert.size} color={GOLD}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Top opportunities grid */}
+            <div style={fm(ORANGE,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:12})}>Top Opportunities ({dynamicOptions.topOpportunities?.length})</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
+              {dynamicOptions.topOpportunities?.map((opp,i)=>{
+                const rc=RISK_CONFIG[opp.riskLevel]||RISK_CONFIG.MODERATE;
+                return(
+                  <div key={i} style={{background:"#0a0e16",border:`1px solid ${rc.color}44`,borderRadius:7,padding:"14px 16px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                      <div>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:WHITE,letterSpacing:2}}>{opp.ticker}</span>
+                          {opp.unusualActivity&&<Tag label="🔥 UOA" color={RED}/>}
+                        </div>
+                        <div style={fm(MUTED,12,{marginBottom:4})}>{opp.name}</div>
+                        <Tag label={`${opp.type} • ${opp.strategy}`} color={opp.type==="CALL"?GREEN:opp.type==="PUT"?RED:GOLD}/>
+                      </div>
+                      <div style={{textAlign:"center"}}>
+                        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:GREEN}}>{opp.maxProfit}</div>
+                        <div style={fm(MUTED,9)}>MAX PROFIT</div>
+                      </div>
+                    </div>
+                    <div style={{background:CARD,borderRadius:4,padding:"7px 10px",marginBottom:8,borderLeft:`2px solid ${rc.color}`}}>
+                      <div style={fm(rc.color,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:2,fontWeight:700})}>{rc.icon} {opp.riskLevel}</div>
+                      <p style={fm("#8a9aaa",12,{lineHeight:1.6})}>{opp.signal}</p>
+                    </div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
+                      <Tag label={`Strike: ${opp.strike}`} color={MUTED}/>
+                      <Tag label={`Exp: ${opp.expiry}`} color={MUTED}/>
+                      <Tag label={`${opp.confidence}% CONF`} color={rc.color}/>
+                    </div>
+                    <div style={fm(MUTED,11,{lineHeight:1.5})}><strong style={{color:"#7a8aaa"}}>Catalyst:</strong> {opp.catalyst}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── CUSTOM TICKER SEARCH ──────────────────────────────────── */}
+      <div style={{background:CARD,border:`1px solid ${ORANGE}33`,borderRadius:8,padding:18,marginBottom:22}}>
+        <div style={fm(ORANGE,11,{letterSpacing:2,textTransform:"uppercase",fontWeight:700,marginBottom:10})}>🔍 Analyze Any Stock Options</div>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginBottom:8}}>
+          <input
+            placeholder="Enter any ticker (e.g. HOOD, SOFI, RBLX...)"
+            value={customOptTicker}
+            onChange={e=>setCustomOptTicker(e.target.value.toUpperCase())}
+            onKeyDown={e=>e.key==="Enter"&&analyzeCustomOptions()}
+            style={{background:DIM,border:`1px solid ${ORANGE}55`,color:WHITE,fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,padding:"10px 14px",borderRadius:5,width:280,outline:"none"}}
+          />
+          <button onClick={analyzeCustomOptions} disabled={customOptLoading||!customOptTicker.trim()} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,letterSpacing:0.5,padding:"11px 20px",borderRadius:5,cursor:"pointer",textTransform:"uppercase",opacity:customOptTicker.trim()?1:0.5}}>
+            {customOptLoading?"ANALYZING...":"▶ GET OPTIONS"}
+          </button>
+          {customOptResult&&<button onClick={()=>setCustomOptResult(null)} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:11,padding:"10px 14px",borderRadius:5,cursor:"pointer"}}>✕ Clear</button>}
+        </div>
+        <div style={fm(MUTED,11)}>Get 3 AI-generated options setups for any US-listed stock</div>
+      </div>
+
+      {/* Custom options result */}
+      {customOptResult&&(
+        <div style={{marginBottom:24}}>
+          <div style={fm(ORANGE,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:12})}>📊 Options Analysis — {customOptResult.ticker}</div>
+          {customOptResult.result&&<OptionsResult result={customOptResult.result}/>}
+        </div>
+      )}
+
       <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:7,padding:"12px 16px",marginBottom:16,display:"flex",gap:16,flexWrap:"wrap",alignItems:"center"}}>
         <span style={fm(MUTED,12,{letterSpacing:1,textTransform:"uppercase",marginRight:4})}>Quick Guide:</span>
         {[["BUY CALL",GREEN,"Stock goes UP → profit"],["BUY PUT",RED,"Stock goes DOWN → profit"],["SELL CALL",GREEN,"Collect premium, bullish/neutral"],["SELL PUT",RED,"Collect premium, bullish on dip"]].map(([l,c,d])=>(
@@ -1069,7 +1619,7 @@ function StockCard({stock,subscribed,analysesUsed,onUseAnalysis,onPaywall,prefet
 function GemCard({gem,subscribed,onPaywall}){
   const [state,setState]=useState("idle");const [result,setResult]=useState(null);
   const c=result?(CONFIDENCE_MAP[result.verdict]||CONFIDENCE_MAP["SPECULATIVE"]):null;
-  const run=async()=>{if(!subscribed){onPaywall();return;}setState("loading");try{const r=await callAI(GEM_SYSTEM,`Analyze ${gem.ticker} (${gem.name}) in ${gem.sector}. Thesis: ${gem.why}. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`);setResult(r);setState("done");}catch{setState("error");}};
+  const run=async()=>{if(!subscribed&&!BETA_MODE){onPaywall();return;}setState("loading");try{const r=await callAI(GEM_SYSTEM,`Analyze ${gem.ticker} (${gem.name}) in ${gem.sector}. Thesis: ${gem.why}. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`);setResult(r);setState("done");}catch{setState("error");}};
   return(
     <div style={{background:CARD,border:`1px solid ${c?c.color+"33":BORDER}`,borderRadius:8,padding:18,display:"flex",flexDirection:"column",gap:11}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}><span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:3}}>{gem.ticker}</span><Tag label="HIDDEN GEM" color={PURPLE}/></div><div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:MUTED,marginBottom:5}}>{gem.name}</div><Tag label={gem.sector} color={MUTED}/></div><MiniSpark trend="up" color={c?.color||PURPLE}/></div>
@@ -1094,7 +1644,7 @@ function GemCard({gem,subscribed,onPaywall}){
 function IPOCard({ipo,subscribed,onPaywall}){
   const [state,setState]=useState("idle");const [result,setResult]=useState(null);
   const c=result?(CONFIDENCE_MAP[result.verdict]||CONFIDENCE_MAP["SPECULATIVE"]):null;
-  const run=async()=>{if(!subscribed){onPaywall();return;}setState("loading");try{const r=await callAI(IPO_SYSTEM,`Analyze IPO: ${ipo.name} (${ipo.sector}). Info: ${ipo.description}. Timing: ${ipo.estTiming}. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`);setResult(r);setState("done");}catch{setState("error");}};
+  const run=async()=>{if(!subscribed&&!BETA_MODE){onPaywall();return;}setState("loading");try{const r=await callAI(IPO_SYSTEM,`Analyze IPO: ${ipo.name} (${ipo.sector}). Info: ${ipo.description}. Timing: ${ipo.estTiming}. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`);setResult(r);setState("done");}catch{setState("error");}};
   const confColor=result?result.buyConfidence>=75?GREEN:result.buyConfidence>=55?GOLD:result.buyConfidence>=35?BLUE:RED:MUTED;
   return(
     <div style={{background:CARD,border:`1px solid ${c?c.color+"33":BORDER}`,borderRadius:8,padding:18,display:"flex",flexDirection:"column",gap:11}}>
@@ -1118,7 +1668,7 @@ function Screener({subscribed,onPaywall}){
   const [filters,setFilters]=useState({sector:"All",tag:"All",minConf:0,verdict:"All"});
   const [results,setResults]=useState([]);const [loading,setLoading]=useState(false);
   const run=async()=>{
-    if(!subscribed){onPaywall();return;}
+    if(!subscribed&&!BETA_MODE){onPaywall();return;}
     setLoading(true);setResults([]);
     const pool=ALL_STOCKS.filter(s=>(filters.sector==="All"||s.sector===filters.sector)&&(filters.tag==="All"||s.tag===filters.tag)).slice(0,8);
     const out=[];
@@ -1146,7 +1696,7 @@ function Portfolio({subscribed,onPaywall}){
   const [newH,setNewH]=useState({ticker:"",shares:"",avgCost:""});
   const [analyses,setAnalyses]=useState({});const [loading,setLoading]=useState(null);
   const add=()=>{if(!newH.ticker||!newH.shares||!newH.avgCost)return;setHoldings(h=>[...h,{ticker:newH.ticker.toUpperCase(),shares:+newH.shares,avgCost:+newH.avgCost}]);setNewH({ticker:"",shares:"",avgCost:""});};
-  const analyzeAll=async()=>{if(!subscribed){onPaywall();return;}for(const h of holdings){if(analyses[h.ticker])continue;setLoading(h.ticker);try{const stock=ALL_STOCKS.find(s=>s.ticker===h.ticker)||{ticker:h.ticker,name:h.ticker,sector:"Unknown"};const r=await callAI(STOCK_SYSTEM,`Analyze ${stock.ticker} (${stock.name}). Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`);setAnalyses(a=>({...a,[h.ticker]:r}));}catch{}setLoading(null);}};
+  const analyzeAll=async()=>{if(!subscribed&&!BETA_MODE){onPaywall();return;}for(const h of holdings){if(analyses[h.ticker])continue;setLoading(h.ticker);try{const stock=ALL_STOCKS.find(s=>s.ticker===h.ticker)||{ticker:h.ticker,name:h.ticker,sector:"Unknown"};const r=await callAI(STOCK_SYSTEM,`Analyze ${stock.ticker} (${stock.name}). Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`);setAnalyses(a=>({...a,[h.ticker]:r}));}catch{}setLoading(null);}};
   return(
     <div>
       <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:8,padding:18,marginBottom:18}}>
@@ -1310,6 +1860,31 @@ export default function App(){
   const [tab,setTab]=useState("watchlist");
   const [showTerms,setShowTerms]=useState(false);
   const [showPrivacy,setShowPrivacy]=useState(false);
+  // Dynamic IPO state
+  const [dynamicIPOs,setDynamicIPOs]=useState(null);
+  const [ipoLoading,setIpoLoading]=useState(false);
+  // Dynamic Hidden Gems state
+  const [dynamicGems,setDynamicGems]=useState(null);
+  const [gemsLoading,setGemsLoading]=useState(false);
+  // Dynamic Smart Money activity state
+  const [smartMoneyActivity,setSmartMoneyActivity]=useState(null);
+  const [smartMoneyLoading,setSmartMoneyLoading]=useState(false);
+  // Day Trading state
+  const [dtMomentum,setDtMomentum]=useState(null);
+  const [dtMomentumLoading,setDtMomentumLoading]=useState(false);
+  const [dtScalps,setDtScalps]=useState(null);
+  const [dtScalpsLoading,setDtScalpsLoading]=useState(false);
+  const [dtSqueeze,setDtSqueeze]=useState(null);
+  const [dtSqueezeLoading,setDtSqueezeLoading]=useState(false);
+  const [dtAfterHours,setDtAfterHours]=useState(null);
+  const [dtAfterHoursLoading,setDtAfterHoursLoading]=useState(false);
+  const [dtPreMarket,setDtPreMarket]=useState(null);
+  const [dtPreMarketLoading,setDtPreMarketLoading]=useState(false);
+  // Dynamic Options opportunities state
+  const [dynamicOptions,setDynamicOptions]=useState(null);
+  const [dynamicOptionsLoading,setDynamicOptionsLoading]=useState(false);
+  // Options custom search
+  const [optionsSearchTicker,setOptionsSearchTicker]=useState("");
   const [subscribed,setSubscribed]=useState(false);
   const [analysesUsed,setAnalysesUsed]=useState(0);
   const [showPaywall,setShowPaywall]=useState(false);
@@ -1343,6 +1918,119 @@ export default function App(){
     }
   },[]);
 
+  // Day Trading fetch functions
+  const fetchMomentumMovers = async () => {
+    setDtMomentumLoading(true);
+    try {
+      const r = await callAI(MOMENTUM_MOVERS_SYSTEM,
+        `Search for stocks moving significantly RIGHT NOW. Check after-hours trading, pre-market movers, and any stocks with breaking news catalysts. Include earnings releases, analyst upgrades/downgrades, FDA decisions, contract wins, and any other catalysts causing big price moves today. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
+        "perplexity"
+      );
+      setDtMomentum(r);
+    } catch(e) { console.error("Momentum fetch failed:", e); }
+    setDtMomentumLoading(false);
+  };
+
+  const fetchScalpSetups = async () => {
+    setDtScalpsLoading(true);
+    try {
+      const r = await callAI(SCALP_SETUPS_SYSTEM,
+        `Find the best scalping opportunities right now for intraday traders. Look for stocks with clear technical setups, high liquidity, and momentum. Include pre-market and after-hours setups. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
+        "perplexity"
+      );
+      setDtScalps(r);
+    } catch(e) { console.error("Scalps fetch failed:", e); }
+    setDtScalpsLoading(false);
+  };
+
+  const fetchShortSqueeze = async () => {
+    setDtSqueezeLoading(true);
+    try {
+      const r = await callAI(SHORT_SQUEEZE_SYSTEM,
+        `Search for stocks with high short interest showing signs of an active or imminent short squeeze. Look for stocks with short float above 20%, rising prices, increasing volume, and positive catalysts. Check social media buzz and options activity for gamma squeeze potential. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
+        "perplexity"
+      );
+      setDtSqueeze(r);
+    } catch(e) { console.error("Squeeze fetch failed:", e); }
+    setDtSqueezeLoading(false);
+  };
+
+  const fetchAfterHours = async () => {
+    setDtAfterHoursLoading(true);
+    try {
+      const r = await callAI(AFTERHOURS_SYSTEM,
+        `Search for all significant after-hours and pre-market stock movements happening RIGHT NOW. Find earnings releases after market close today, stocks gapping up or down significantly, any breaking news moving stocks in extended hours trading. Include earnings results with actual vs estimated EPS and revenue figures. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
+        "perplexity"
+      );
+      setDtAfterHours(r);
+    } catch(e) { console.error("After-hours fetch failed:", e); }
+    setDtAfterHoursLoading(false);
+  };
+
+  const fetchPreMarket = async () => {
+    setDtPreMarketLoading(true);
+    try {
+      const r = await callAI(PREMARKET_SYSTEM,
+        `Search for pre-market stock movers and futures data for today. Find stocks with significant pre-market price moves, overnight earnings releases, analyst actions before open, and any breaking news. Check S&P 500 futures, Nasdaq futures, and VIX. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
+        "perplexity"
+      );
+      setDtPreMarket(r);
+    } catch(e) { console.error("Pre-market fetch failed:", e); }
+    setDtPreMarketLoading(false);
+  };
+
+  // Fetch dynamic IPOs
+  const fetchDynamicIPOs = async () => {
+    setIpoLoading(true);
+    try {
+      const r = await callAI(DYNAMIC_IPO_SYSTEM,
+        `Search for the most current upcoming IPOs filing for 2025-2026. Find companies that have recently filed S-1 or F-1 forms with the SEC, announced IPO plans, or are expected to go public soon. Focus on high-growth companies with significant profit potential. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
+        "perplexity"
+      );
+      setDynamicIPOs(r);
+    } catch(e) { console.error("IPO fetch failed:", e); }
+    setIpoLoading(false);
+  };
+
+  // Fetch dynamic Hidden Gems
+  const fetchDynamicGems = async () => {
+    setGemsLoading(true);
+    try {
+      const r = await callAI(DYNAMIC_GEMS_SYSTEM,
+        `Search for small and mid-cap stocks that are currently undervalued or have significant upcoming catalysts. Look for stocks with recent analyst upgrades, insider buying, earnings beats, or technical breakouts. Find stocks that institutional investors are quietly accumulating. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
+        "perplexity"
+      );
+      setDynamicGems(r);
+    } catch(e) { console.error("Gems fetch failed:", e); }
+    setGemsLoading(false);
+  };
+
+  // Fetch dynamic Smart Money activity
+  const fetchSmartMoneyActivity = async () => {
+    setSmartMoneyLoading(true);
+    try {
+      const r = await callAI(DYNAMIC_SMART_MONEY_SYSTEM,
+        `Search for the most recent congressional STOCK Act trade disclosures filed in the last 30 days and the latest SEC 13F filings from major hedge funds. Find any notable new positions, large trades, or unusual activity. Which stocks are smart money buying or selling right now? Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
+        "perplexity"
+      );
+      setSmartMoneyActivity(r);
+    } catch(e) { console.error("Smart money fetch failed:", e); }
+    setSmartMoneyLoading(false);
+  };
+
+  // Fetch dynamic Options opportunities
+  const fetchDynamicOptions = async () => {
+    setDynamicOptionsLoading(true);
+    try {
+      const r = await callAI(DYNAMIC_OPTIONS_SYSTEM,
+        `Search for the best options trading opportunities right now. Look for: unusual options activity (large block trades, high volume vs open interest), stocks with earnings in the next 2 weeks, stocks with elevated IV crush opportunities, and any unusual call or put sweeps detected today. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
+        "perplexity"
+      );
+      setDynamicOptions(r);
+    } catch(e) { console.error("Dynamic options fetch failed:", e); }
+    setDynamicOptionsLoading(false);
+  };
+
   // Fetch trending stocks
   const fetchTrending = async () => {
     setTrendingLoading(true);
@@ -1360,7 +2048,7 @@ export default function App(){
 
   // Fetch AI-generated dynamic watchlist
   const fetchDynamicWatchlist = async () => {
-    if(!subscribed){setShowPaywall(true);return;}
+    if(!subscribed&&!BETA_MODE){setShowPaywall(true);return;}
     setWatchlistLoading(true);
     try {
       const r = await callAI(DYNAMIC_WATCHLIST_SYSTEM,
@@ -1385,7 +2073,7 @@ export default function App(){
         `The user searched for: "${input}". This could be a stock ticker symbol OR a company name. First identify the correct US stock ticker symbol for this input (e.g. if user typed "Apple" use AAPL, if "Nvidia" use NVDA, if "Tesla" use TSLA). Then analyze that stock. Search for: company name, ticker symbol, sector, latest earnings report, analyst ratings, recent news, and growth catalysts. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`
       );
       setCustomStock({ticker: r?.ticker||input.toUpperCase(), result: r});
-      if(!subscribed) setAnalysesUsed(p=>p+1);
+      if(!subscribed&&!BETA_MODE) setAnalysesUsed(p=>p+1);
     } catch(e) {
       alert("Could not analyze " + ticker + ". Please check the ticker symbol and try again.");
     }
@@ -1408,6 +2096,7 @@ export default function App(){
 
   const TABS=[
     {id:"watchlist",  label:"Watchlist"},
+    {id:"daytrading", label:"Day Trading ⚡"},
     {id:"smartmoney", label:"Smart Money 🕵️"},
     {id:"options",    label:"Options 📊"},
     {id:"screener",   label:"Screener"},
@@ -1439,11 +2128,10 @@ export default function App(){
           <div style={{display:"flex",alignItems:"baseline",gap:6}}>
             <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:WHITE,letterSpacing:4}}>STOCK</span>
             <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,color:GREEN,letterSpacing:4,textShadow:`0 0 16px ${GREEN}55`}}>SIGHT</span>
-            <span style={fm(MUTED,12,{letterSpacing:2,marginLeft:6})}>AI RESEARCH TERMINAL v5 • CLAUDE + PERPLEXITY + GPT-4</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:14}}>
             <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:MUTED,fontWeight:500}}>{etTime}</span>
-            {!subscribed&&<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:MUTED,fontWeight:500}}>Free: <span style={{color:GOLD}}>{Math.max(0,FREE_LIMIT-analysesUsed)}</span> left</span>}
+            {(!subscribed&&!BETA_MODE)&&<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:MUTED,fontWeight:500}}>Free: <span style={{color:GOLD}}>{Math.max(0,FREE_LIMIT-analysesUsed)}</span> left</span>}
             {subscribed?<Tag label="PRO ACTIVE" color={GREEN}/>:<button onClick={()=>setShowPaywall(true)} style={{background:`${GOLD}14`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'Space Mono',monospace",fontSize:12,letterSpacing:1,padding:"6px 12px",borderRadius:4,cursor:"pointer"}}>UPGRADE →</button>}
           </div>
         </div>
@@ -1452,8 +2140,8 @@ export default function App(){
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)} style={{
               background:"none",border:"none",
-              borderBottom:`2px solid ${tab===t.id?(t.id==="smartmoney"?PINK:t.id==="options"?ORANGE:GREEN):"transparent"}`,
-              color:tab===t.id?(t.id==="smartmoney"?PINK:t.id==="options"?ORANGE:GREEN):MUTED,
+              borderBottom:`2px solid ${tab===t.id?(t.id==="smartmoney"?PINK:t.id==="options"?ORANGE:t.id==="daytrading"?RED:GREEN):"transparent"}`,
+              color:tab===t.id?(t.id==="smartmoney"?PINK:t.id==="options"?ORANGE:t.id==="daytrading"?RED:GREEN):MUTED,
               fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,letterSpacing:0.3,
               padding:"14px 22px",cursor:"pointer",textTransform:"uppercase",transition:"color .2s",whiteSpace:"nowrap"
             }}>{t.label}</button>
@@ -1461,6 +2149,472 @@ export default function App(){
         </div>
 
         <div style={{padding:"22px 28px",maxWidth:1400,margin:"0 auto"}}>
+          {tab==="daytrading"&&(
+            <div>
+              {/* ── HEADER ─────────────────────────────────────────── */}
+              <div style={{background:`${RED}08`,border:`1px solid ${RED}33`,borderRadius:8,padding:"16px 20px",marginBottom:20}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+                  <div>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,color:RED,letterSpacing:3,textShadow:`0 0 20px ${RED}44`,marginBottom:4}}>⚡ Day Trading Terminal</div>
+                    <p style={fm(MUTED,13,{lineHeight:1.6})}>Real-time momentum movers, scalp setups, after-hours plays, and short squeeze alerts — updated live by AI</p>
+                  </div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    <button onClick={fetchAfterHours} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"8px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+                      {dtAfterHoursLoading?"...":"🌙 After-Hours"}
+                    </button>
+                    <button onClick={fetchPreMarket} style={{background:`${GOLD}18`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"8px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+                      {dtPreMarketLoading?"...":"🌅 Pre-Market"}
+                    </button>
+                    <button onClick={fetchMomentumMovers} style={{background:`${RED}18`,border:`1px solid ${RED}44`,color:RED,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"8px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+                      {dtMomentumLoading?"SCANNING...":"🔥 Scan Movers"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── AFTER-HOURS / PRE-MARKET SECTION ───────────────── */}
+              <div style={{background:CARD,border:`1px solid ${ORANGE}33`,borderRadius:8,padding:18,marginBottom:20}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
+                  <div>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:ORANGE,letterSpacing:2,marginBottom:3}}>🌙 After-Hours & Pre-Market Movers</div>
+                    <div style={fm(MUTED,12)}>Stocks moving in extended hours — earnings releases, breaking news, analyst actions</div>
+                  </div>
+                  <button onClick={fetchAfterHours} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+                    {dtAfterHoursLoading?"FETCHING...":"🔄 REFRESH"}
+                  </button>
+                </div>
+
+                {dtAfterHoursLoading&&(
+                  <div style={{textAlign:"center",padding:"20px 0"}}>
+                    <div style={fm(ORANGE,12,{letterSpacing:1,marginBottom:8,fontWeight:600})}>SCANNING AFTER-HOURS ACTIVITY...</div>
+                    <div style={{display:"flex",justifyContent:"center",gap:3}}>{Array.from({length:8},(_,i)=><div key={i} style={{width:3,height:16,background:ORANGE,borderRadius:2,animation:`barAnim 0.9s ease-in-out ${i*0.09}s infinite alternate`}}/>)}</div>
+                  </div>
+                )}
+
+                {!dtAfterHours&&!dtAfterHoursLoading&&(
+                  <div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "After-Hours" or "Refresh" to see extended hours movers</div>
+                )}
+
+                {dtAfterHours&&!dtAfterHoursLoading&&(
+                  <div>
+                    {/* Session + summary banner */}
+                    <div style={{background:DIM,borderRadius:6,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+                      <div>
+                        <Tag label={dtAfterHours.session} color={ORANGE}/>
+                        <span style={{...fm(MUTED,12),marginLeft:10}}>{dtAfterHours.summary}</span>
+                      </div>
+                      <span style={fm(MUTED,11)}>{dtAfterHours.timestamp}</span>
+                    </div>
+
+                    {/* Earnings tonight */}
+                    {dtAfterHours.earningsTonight?.length>0&&(
+                      <div style={{marginBottom:14}}>
+                        <div style={fm(GOLD,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:8})}>📅 Earnings Tonight</div>
+                        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                          {dtAfterHours.earningsTonight.map((e,i)=>(
+                            <div key={i} style={{background:DIM,borderRadius:5,padding:"8px 12px",border:`1px solid ${GOLD}33`}}>
+                              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:WHITE,letterSpacing:1,marginBottom:2}}>{e.ticker}</div>
+                              <div style={fm(MUTED,11,{marginBottom:2})}>{e.name}</div>
+                              <div style={fm(GOLD,11)}>{e.reportTime} • ±{e.impliedMove}</div>
+                              <div style={fm(MUTED,10)}>EPS Est: {e.epsEstimate} | Rev Est: {e.revenueEstimate}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Big movers grid */}
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:12}}>
+                      {dtAfterHours.bigMovers?.map((mover,i)=>{
+                        const isUp = mover.direction==="UP";
+                        const clr = isUp?GREEN:RED;
+                        return(
+                          <div key={i} style={{background:DIM,border:`1px solid ${clr}33`,borderRadius:7,padding:"14px 16px"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                              <div>
+                                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:WHITE,letterSpacing:2}}>{mover.ticker}</span>
+                                  <Tag label={mover.gapType?.replace(/_/g," ")} color={clr}/>
+                                </div>
+                                <div style={fm(MUTED,12,{marginBottom:4})}>{mover.name}</div>
+                              </div>
+                              <div style={{textAlign:"right"}}>
+                                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:clr}}>{mover.afterHoursPct}</div>
+                                <div style={fm(MUTED,10)}>{mover.afterHoursChange}</div>
+                              </div>
+                            </div>
+                            <div style={{background:CARD,borderRadius:4,padding:"7px 10px",marginBottom:8,borderLeft:`2px solid ${ORANGE}`}}>
+                              <div style={fm(ORANGE,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:2,fontWeight:700})}>Catalyst</div>
+                              <p style={fm("#9a8a6a",12,{lineHeight:1.6})}>{mover.catalyst}</p>
+                            </div>
+                            <div style={{background:CARD,borderRadius:4,padding:"7px 10px",marginBottom:8,borderLeft:`2px solid ${clr}`}}>
+                              <div style={fm(clr,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:2,fontWeight:700})}>Tomorrow Plan</div>
+                              <p style={fm("#8a9aaa",12,{lineHeight:1.6})}>{mover.dayTradePlan}</p>
+                            </div>
+                            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                              <Tag label={`Close: ${mover.regularClose}`} color={MUTED}/>
+                              <Tag label={`AH: ${mover.afterHoursPrice}`} color={clr}/>
+                              <Tag label={mover.nextDayOutlook} color={mover.nextDayOutlook==="BULLISH"?GREEN:mover.nextDayOutlook==="BEARISH"?RED:GOLD}/>
+                            </div>
+                            {mover.keyLevels&&<div style={{marginTop:8,fontSize:11,color:"#6a7a8a",fontFamily:"'DM Sans',sans-serif"}}><strong>Key Levels:</strong> {mover.keyLevels}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Tomorrow's watchlist */}
+                    {dtAfterHours.tomorrowWatchlist?.length>0&&(
+                      <div style={{marginTop:14,background:DIM,borderRadius:6,padding:"10px 14px",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                        <span style={fm(WHITE,12,{fontWeight:700})}>👀 Watch Tomorrow:</span>
+                        {dtAfterHours.tomorrowWatchlist.map((t,i)=>(
+                          <div key={i} style={{background:`${GREEN}18`,border:`1px solid ${GREEN}33`,borderRadius:4,padding:"3px 10px",fontFamily:"'Bebas Neue',cursive",fontSize:14,color:GREEN,letterSpacing:1}}>{t}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ── PRE-MARKET REPORT ───────────────────────────────── */}
+              <div style={{background:CARD,border:`1px solid ${GOLD}33`,borderRadius:8,padding:18,marginBottom:20}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
+                  <div>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:GOLD,letterSpacing:2,marginBottom:3}}>🌅 Pre-Market Report</div>
+                    <div style={fm(MUTED,12)}>Futures, overnight gaps, and today's day trading setup</div>
+                  </div>
+                  <button onClick={fetchPreMarket} style={{background:`${GOLD}18`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+                    {dtPreMarketLoading?"LOADING...":"🔄 REFRESH"}
+                  </button>
+                </div>
+
+                {dtPreMarketLoading&&(
+                  <div style={{textAlign:"center",padding:"16px 0"}}>
+                    <div style={fm(GOLD,12,{letterSpacing:1,marginBottom:8,fontWeight:600})}>LOADING PRE-MARKET DATA...</div>
+                    <div style={{display:"flex",justifyContent:"center",gap:3}}>{Array.from({length:8},(_,i)=><div key={i} style={{width:3,height:16,background:GOLD,borderRadius:2,animation:`barAnim 0.9s ease-in-out ${i*0.09}s infinite alternate`}}/>)}</div>
+                  </div>
+                )}
+
+                {!dtPreMarket&&!dtPreMarketLoading&&(
+                  <div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "Pre-Market" or "Refresh" to see today's pre-market setup</div>
+                )}
+
+                {dtPreMarket&&!dtPreMarketLoading&&(
+                  <div>
+                    {/* Futures snapshot */}
+                    {dtPreMarket.futuresSnapshot&&(
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,marginBottom:16}}>
+                        {[
+                          {label:"S&P 500",val:dtPreMarket.futuresSnapshot.sp500},
+                          {label:"NASDAQ",val:dtPreMarket.futuresSnapshot.nasdaq},
+                          {label:"DOW",val:dtPreMarket.futuresSnapshot.dow},
+                          {label:"VIX",val:dtPreMarket.futuresSnapshot.vix,neutral:true},
+                        ].map((f,i)=>{
+                          const isPos = f.val?.startsWith("+");
+                          const clr = f.neutral?ORANGE:isPos?GREEN:RED;
+                          return(
+                            <div key={i} style={{background:DIM,borderRadius:6,padding:"10px 14px",textAlign:"center",border:`1px solid ${clr}33`}}>
+                              <div style={fm(MUTED,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:4})}>{f.label}</div>
+                              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:clr}}>{f.val}</div>
+                            </div>
+                          );
+                        })}
+                        <div style={{background:DIM,borderRadius:6,padding:"10px 14px",textAlign:"center",border:`1px solid ${dtPreMarket.marketOutlook?.includes("BULL")?GREEN:dtPreMarket.marketOutlook?.includes("BEAR")?RED:GOLD}33`,gridColumn:"span 2"}}>
+                          <div style={fm(MUTED,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:4})}>Today's Outlook</div>
+                          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:dtPreMarket.marketOutlook?.includes("BULL")?GREEN:dtPreMarket.marketOutlook?.includes("BEAR")?RED:GOLD}}>{dtPreMarket.marketOutlook}</div>
+                        </div>
+                      </div>
+                    )}
+                    {dtPreMarket.dayTradingBias&&(
+                      <div style={{background:`${GOLD}08`,borderRadius:5,padding:"10px 14px",marginBottom:14,borderLeft:`2px solid ${GOLD}`}}>
+                        <div style={fm(GOLD,10,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:3})}>Day Trading Bias</div>
+                        <p style={fm("#9a8a6a",13,{lineHeight:1.6})}>{dtPreMarket.dayTradingBias}</p>
+                      </div>
+                    )}
+                    {dtPreMarket.economicEvents&&(
+                      <div style={{marginBottom:14,background:DIM,borderRadius:5,padding:"8px 12px",borderLeft:`2px solid ${PURPLE}`}}>
+                        <div style={fm(PURPLE,10,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:3})}>📅 Economic Events Today</div>
+                        <p style={fm(MUTED,12,{lineHeight:1.6})}>{dtPreMarket.economicEvents}</p>
+                      </div>
+                    )}
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12}}>
+                      {dtPreMarket.preMarketMovers?.map((m,i)=>{
+                        const isUp = m.gapDirection==="UP";
+                        const clr = isUp?GREEN:RED;
+                        const gapColor = m.gapSize?.includes("HUGE")?RED:m.gapSize?.includes("LARGE")?ORANGE:GOLD;
+                        return(
+                          <div key={i} style={{background:DIM,border:`1px solid ${clr}33`,borderRadius:7,padding:"13px 15px"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                              <div>
+                                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:WHITE,letterSpacing:2}}>{m.ticker}</span>
+                                  <Tag label={m.gapSize} color={gapColor}/>
+                                </div>
+                                <div style={fm(MUTED,12)}>{m.name}</div>
+                              </div>
+                              <div style={{textAlign:"right"}}>
+                                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:clr}}>{m.preMarketPct}</div>
+                                <div style={fm(MUTED,10)}>{m.preMarketPrice}</div>
+                              </div>
+                            </div>
+                            <p style={fm(MUTED,12,{lineHeight:1.6,marginBottom:8})}>{m.catalyst}</p>
+                            <div style={{background:CARD,borderRadius:4,padding:"7px 10px",marginBottom:8}}>
+                              <div style={fm(clr,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:2,fontWeight:700})}>Strategy: {m.tradeStrategy}</div>
+                              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
+                                <Tag label={`Open: ${m.keyOpenLevel}`} color={MUTED}/>
+                                <Tag label={`T1: ${m.firstTarget}`} color={GREEN}/>
+                                <Tag label={`SL: ${m.stopLoss}`} color={RED}/>
+                              </div>
+                            </div>
+                            <Tag label={`${m.confidence}% CONFIDENCE`} color={clr}/>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── MOMENTUM MOVERS ─────────────────────────────────── */}
+              <div style={{background:CARD,border:`1px solid ${RED}33`,borderRadius:8,padding:18,marginBottom:20}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
+                  <div>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:RED,letterSpacing:2,marginBottom:3}}>🔥 Momentum Movers</div>
+                    <div style={fm(MUTED,12)}>Stocks with the strongest price momentum and catalysts right now</div>
+                  </div>
+                  <button onClick={fetchMomentumMovers} style={{background:`${RED}18`,border:`1px solid ${RED}44`,color:RED,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+                    {dtMomentumLoading?"SCANNING...":"🔄 REFRESH"}
+                  </button>
+                </div>
+                {dtMomentumLoading&&(
+                  <div style={{textAlign:"center",padding:"20px 0"}}>
+                    <div style={fm(RED,12,{letterSpacing:1,marginBottom:8,fontWeight:600})}>SCANNING MARKET FOR MOMENTUM...</div>
+                    <div style={{display:"flex",justifyContent:"center",gap:3}}>{Array.from({length:9},(_,i)=><div key={i} style={{width:3,height:18,background:RED,borderRadius:2,animation:`barAnim 0.9s ease-in-out ${i*0.08}s infinite alternate`}}/>)}</div>
+                  </div>
+                )}
+                {!dtMomentum&&!dtMomentumLoading&&(
+                  <div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "Scan Movers" to find stocks with strongest momentum right now</div>
+                )}
+                {dtMomentum&&!dtMomentumLoading&&(
+                  <div>
+                    <div style={{background:DIM,borderRadius:6,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8,alignItems:"center"}}>
+                      <p style={fm(MUTED,12,{flex:1,lineHeight:1.6})}>{dtMomentum.marketHighlight}</p>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <Tag label={dtMomentum.marketSession} color={ORANGE}/>
+                        <Tag label={dtMomentum.marketMood} color={dtMomentum.marketMood==="RISK-ON"?GREEN:dtMomentum.marketMood==="RISK-OFF"?RED:GOLD}/>
+                        <span style={fm(MUTED,11)}>{dtMomentum.timestamp}</span>
+                      </div>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:14}}>
+                      {dtMomentum.topMovers?.map((m,i)=>{
+                        const isUp = m.direction==="UP";
+                        const clr = isUp?GREEN:RED;
+                        const momColor = m.momentum==="STRONG"?clr:m.momentum==="BUILDING"?GOLD:MUTED;
+                        return(
+                          <div key={i} style={{background:DIM,border:`1px solid ${clr}44`,borderRadius:8,padding:"15px 17px"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                              <div>
+                                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:2}}>{m.ticker}</span>
+                                  <Tag label={m.session} color={ORANGE}/>
+                                  <Tag label={m.momentum} color={momColor}/>
+                                </div>
+                                <div style={fm(MUTED,12,{marginBottom:3})}>{m.name} • {m.sector}</div>
+                                <div style={fm(MUTED,11)}>{m.volume}</div>
+                              </div>
+                              <div style={{textAlign:"right"}}>
+                                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:clr,lineHeight:1}}>{m.changePct}</div>
+                                <div style={fm(clr,12)}>{m.change}</div>
+                                <div style={fm(MUTED,11)}>{m.price}</div>
+                              </div>
+                            </div>
+                            <div style={{background:CARD,borderRadius:5,padding:"8px 12px",marginBottom:10,borderLeft:`2px solid ${ORANGE}`}}>
+                              <div style={fm(ORANGE,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:2,fontWeight:700})}>Catalyst</div>
+                              <p style={fm("#9a8a6a",12,{lineHeight:1.6})}>{m.catalyst}</p>
+                            </div>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
+                              <div style={{background:CARD,borderRadius:4,padding:"6px 8px",textAlign:"center"}}>
+                                <div style={fm(MUTED,9,{textTransform:"uppercase",marginBottom:2})}>Entry</div>
+                                <div style={fm(WHITE,12,{fontWeight:600})}>{m.entryZone}</div>
+                              </div>
+                              <div style={{background:CARD,borderRadius:4,padding:"6px 8px",textAlign:"center"}}>
+                                <div style={fm(MUTED,9,{textTransform:"uppercase",marginBottom:2})}>Target</div>
+                                <div style={fm(GREEN,12,{fontWeight:600})}>{m.target1}</div>
+                              </div>
+                              <div style={{background:CARD,borderRadius:4,padding:"6px 8px",textAlign:"center"}}>
+                                <div style={fm(MUTED,9,{textTransform:"uppercase",marginBottom:2})}>Stop</div>
+                                <div style={fm(RED,12,{fontWeight:600})}>{m.stopLoss}</div>
+                              </div>
+                            </div>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                              <Tag label={m.signal} color={m.signal?.includes("BUY")?GREEN:m.signal?.includes("SHORT")?RED:GOLD}/>
+                              <Tag label={`R:R ${m.riskReward}`} color={MUTED}/>
+                              <Tag label={`${m.confidence}% CONF`} color={clr}/>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── SCALP SETUPS ────────────────────────────────────── */}
+              <div style={{background:CARD,border:`1px solid ${CYAN}33`,borderRadius:8,padding:18,marginBottom:20}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
+                  <div>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:CYAN,letterSpacing:2,marginBottom:3}}>🎯 Scalp Setups</div>
+                    <div style={fm(MUTED,12)}>Quick 1–5% intraday setups with precise entry, target, and stop loss</div>
+                  </div>
+                  <button onClick={fetchScalpSetups} style={{background:`${CYAN}18`,border:`1px solid ${CYAN}44`,color:CYAN,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+                    {dtScalpsLoading?"SCANNING...":"🔄 REFRESH"}
+                  </button>
+                </div>
+                {dtScalpsLoading&&(
+                  <div style={{textAlign:"center",padding:"16px 0"}}>
+                    <div style={fm(CYAN,12,{letterSpacing:1,marginBottom:8,fontWeight:600})}>FINDING SCALP SETUPS...</div>
+                    <div style={{display:"flex",justifyContent:"center",gap:3}}>{Array.from({length:8},(_,i)=><div key={i} style={{width:3,height:16,background:CYAN,borderRadius:2,animation:`barAnim 0.9s ease-in-out ${i*0.09}s infinite alternate`}}/>)}</div>
+                  </div>
+                )}
+                {!dtScalps&&!dtScalpsLoading&&(
+                  <div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "Refresh" to find today's best scalp setups</div>
+                )}
+                {dtScalps&&!dtScalpsLoading&&(
+                  <div>
+                    <div style={fm(MUTED,11,{marginBottom:10})}>Session: {dtScalps.session} • {dtScalps.timestamp}</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
+                      {dtScalps.setups?.map((s,i)=>{
+                        const urgColor = s.urgency==="NOW"?RED:s.urgency==="WATCH"?GOLD:MUTED;
+                        return(
+                          <div key={i} style={{background:DIM,border:`1px solid ${urgColor}44`,borderRadius:7,padding:"13px 15px"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                              <div>
+                                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:WHITE,letterSpacing:2}}>{s.ticker}</span>
+                                  <Tag label={s.urgency} color={urgColor}/>
+                                </div>
+                                <div style={fm(MUTED,12,{marginBottom:3})}>{s.name}</div>
+                                <Tag label={`${s.setupType} • ${s.timeframe}`} color={CYAN}/>
+                              </div>
+                              <div style={{textAlign:"right"}}>
+                                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:GREEN}}>{s.potentialGain}</div>
+                                <div style={fm(RED,11)}>Max loss: {s.maxLoss}</div>
+                              </div>
+                            </div>
+                            <p style={fm(MUTED,12,{lineHeight:1.6,marginBottom:8})}>{s.catalyst}</p>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:5,marginBottom:8}}>
+                              {[{l:"Entry",v:s.entry,c:WHITE},{l:"Target",v:s.target,c:GREEN},{l:"Stop",v:s.stopLoss,c:RED}].map((item,j)=>(
+                                <div key={j} style={{background:CARD,borderRadius:4,padding:"5px 8px",textAlign:"center"}}>
+                                  <div style={fm(MUTED,9,{textTransform:"uppercase",marginBottom:1})}>{item.l}</div>
+                                  <div style={fm(item.c,12,{fontWeight:600})}>{item.v}</div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                              <Tag label={`R:R ${s.riskReward}`} color={MUTED}/>
+                              <Tag label={`Key: ${s.keyLevel}`} color={GOLD}/>
+                              <Tag label={`${s.confidence}%`} color={urgColor}/>
+                            </div>
+                            {s.notes&&<div style={{fontSize:11,color:"#5a7a8a",fontFamily:"'DM Sans',sans-serif",lineHeight:1.5}}><strong>⚠️ Invalidation:</strong> {s.notes}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── SHORT SQUEEZE WATCH ─────────────────────────────── */}
+              <div style={{background:CARD,border:`1px solid ${PINK}33`,borderRadius:8,padding:18,marginBottom:20}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
+                  <div>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:PINK,letterSpacing:2,marginBottom:3}}>🩳 Short Squeeze Watch</div>
+                    <div style={fm(MUTED,12)}>High short interest stocks with squeeze potential — active, imminent, or building</div>
+                  </div>
+                  <button onClick={fetchShortSqueeze} style={{background:`${PINK}18`,border:`1px solid ${PINK}44`,color:PINK,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+                    {dtSqueezeLoading?"SCANNING...":"🔄 REFRESH"}
+                  </button>
+                </div>
+                {dtSqueezeLoading&&(
+                  <div style={{textAlign:"center",padding:"16px 0"}}>
+                    <div style={fm(PINK,12,{letterSpacing:1,marginBottom:8,fontWeight:600})}>SCANNING SHORT INTEREST DATA...</div>
+                    <div style={{display:"flex",justifyContent:"center",gap:3}}>{Array.from({length:8},(_,i)=><div key={i} style={{width:3,height:16,background:PINK,borderRadius:2,animation:`barAnim 0.9s ease-in-out ${i*0.09}s infinite alternate`}}/>)}</div>
+                  </div>
+                )}
+                {!dtSqueeze&&!dtSqueezeLoading&&(
+                  <div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "Refresh" to find current short squeeze candidates</div>
+                )}
+                {dtSqueeze&&!dtSqueezeLoading&&(
+                  <div>
+                    {dtSqueeze.activeSqueezes?.length>0&&(
+                      <div style={{background:`${RED}08`,border:`1px solid ${RED}33`,borderRadius:6,padding:"10px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+                        <span style={fm(RED,12,{fontWeight:700})}>🔥 ACTIVE SQUEEZES:</span>
+                        {dtSqueeze.activeSqueezes.map((t,i)=>(
+                          <div key={i} style={{background:`${RED}18`,border:`1px solid ${RED}33`,borderRadius:4,padding:"3px 10px",fontFamily:"'Bebas Neue',cursive",fontSize:14,color:RED,letterSpacing:1}}>{t}</div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={fm(MUTED,12,{marginBottom:12,lineHeight:1.6})}>{dtSqueeze.summary}</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:12}}>
+                      {dtSqueeze.candidates?.map((c,i)=>{
+                        const stageColor = c.squeezeStage==="ACTIVE"?RED:c.squeezeStage==="IMMINENT"?ORANGE:c.squeezeStage==="BUILDING"?GOLD:MUTED;
+                        return(
+                          <div key={i} style={{background:DIM,border:`1px solid ${stageColor}44`,borderRadius:7,padding:"13px 15px"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                              <div>
+                                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:WHITE,letterSpacing:2}}>{c.ticker}</span>
+                                  <Tag label={c.squeezeStage} color={stageColor}/>
+                                </div>
+                                <div style={fm(MUTED,12)}>{c.name}</div>
+                              </div>
+                              <div style={{textAlign:"right"}}>
+                                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:PINK}}>{c.shortFloat}</div>
+                                <div style={fm(MUTED,10)}>Short Float</div>
+                              </div>
+                            </div>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
+                              {[{l:"Days to Cover",v:c.daysTocover},{l:"Short Interest",v:c.shortInterest}].map((item,j)=>(
+                                <div key={j} style={{background:CARD,borderRadius:4,padding:"5px 8px",textAlign:"center"}}>
+                                  <div style={fm(MUTED,9,{textTransform:"uppercase",marginBottom:1})}>{item.l}</div>
+                                  <div style={fm(WHITE,12,{fontWeight:600})}>{item.v}</div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{background:CARD,borderRadius:4,padding:"7px 10px",marginBottom:8,borderLeft:`2px solid ${stageColor}`}}>
+                              <div style={fm(stageColor,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:2,fontWeight:700})}>Squeeze Catalyst</div>
+                              <p style={fm("#8a7a9a",12,{lineHeight:1.6})}>{c.catalyst}</p>
+                            </div>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:5,marginBottom:8}}>
+                              {[{l:"Entry",v:c.entryZone,cl:WHITE},{l:"Target",v:c.squeezeTarget,cl:GREEN},{l:"Stop",v:c.stopLoss,cl:RED}].map((item,j)=>(
+                                <div key={j} style={{background:"#0a0e16",borderRadius:4,padding:"5px 8px",textAlign:"center"}}>
+                                  <div style={fm(MUTED,9,{textTransform:"uppercase",marginBottom:1})}>{item.l}</div>
+                                  <div style={fm(item.cl,11,{fontWeight:600})}>{item.v}</div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
+                              <Tag label={`Social: ${c.socialBuzz}`} color={c.socialBuzz==="High"?RED:GOLD}/>
+                              <Tag label={`Inst: ${c.institutionalSupport}`} color={MUTED}/>
+                              <Tag label={`${c.confidence}% CONF`} color={stageColor}/>
+                            </div>
+                            {c.risk&&<div style={{fontSize:11,color:"#5a6a7a",fontFamily:"'DM Sans',sans-serif",lineHeight:1.5}}><strong>⚠️ Risk:</strong> {c.risk}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Disclaimer */}
+              <div style={{background:`${RED}08`,border:`1px solid ${RED}22`,borderRadius:6,padding:"12px 16px",marginTop:8}}>
+                <p style={fm(MUTED,11,{lineHeight:1.7})}>
+                  ⚠️ <strong style={{color:RED}}>Day Trading Risk Warning:</strong> Day trading involves substantial risk of loss and is not appropriate for all investors. Most day traders lose money. The setups above are AI-generated for informational purposes only and do NOT constitute financial advice. Never risk more than you can afford to lose. Always use stop losses.
+                </p>
+              </div>
+            </div>
+          )}
+          {
           {tab==="watchlist"&&(
             <div>
               <div style={{marginBottom:16}}><Legend/></div>
@@ -1654,19 +2808,172 @@ export default function App(){
               </div>
             </div>
           )}
-          {tab==="smartmoney"&&<SmartMoneyTab subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>}
-          {tab==="options"&&<OptionsTab subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>}
+          {tab==="smartmoney"&&<SmartMoneyTab subscribed={subscribed} onPaywall={()=>setShowPaywall(true)} liveActivity={smartMoneyActivity} activityLoading={smartMoneyLoading} onRefreshActivity={fetchSmartMoneyActivity}/>}
+          {tab==="options"&&<OptionsTab subscribed={subscribed} onPaywall={()=>setShowPaywall(true)} dynamicOptions={dynamicOptions} dynamicOptionsLoading={dynamicOptionsLoading} onFetchDynamic={fetchDynamicOptions}/>}
           {tab==="screener"&&<Screener subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>}
           {tab==="gems"&&(
             <div>
-              <div style={{marginBottom:18}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:PURPLE,letterSpacing:3,textShadow:`0 0 20px ${PURPLE}44`,marginBottom:6}}>Hidden Gems 💎</div><p style={fm(MUTED,10,{lineHeight:1.7,maxWidth:600})}>Underfollowed small & mid-cap stocks with high breakout potential. Higher risk, higher upside.</p></div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>{HIDDEN_GEMS.map(gem=><GemCard key={gem.ticker} gem={gem} subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>)}</div>
+              {/* Header */}
+              <div style={{marginBottom:18}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:10}}>
+                  <div>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:PURPLE,letterSpacing:3,textShadow:`0 0 20px ${PURPLE}44`,marginBottom:4}}>Hidden Gems 💎</div>
+                    <p style={fm(MUTED,12,{lineHeight:1.7,maxWidth:600})}>Underfollowed stocks with high breakout potential — AI-curated from real-time market data</p>
+                  </div>
+                  <button onClick={fetchDynamicGems} style={{background:`${PURPLE}18`,border:`1px solid ${PURPLE}44`,color:PURPLE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,letterSpacing:0.5,padding:"9px 18px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
+                    {gemsLoading?"🔍 SCANNING...":"🔄 REFRESH GEMS"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic Gems Section */}
+              {gemsLoading&&(
+                <div style={{textAlign:"center",padding:"24px 0",marginBottom:16}}>
+                  <div style={fm(PURPLE,12,{letterSpacing:1,marginBottom:10,fontWeight:600})}>AI SCANNING FOR HIDDEN OPPORTUNITIES...</div>
+                  <div style={{display:"flex",justifyContent:"center",gap:3}}>{Array.from({length:9},(_,i)=><div key={i} style={{width:3,height:18,background:PURPLE,borderRadius:2,animation:`barAnim 0.9s ease-in-out ${i*0.08}s infinite alternate`,opacity:0.75}}/>)}</div>
+                  <div style={fm(MUTED,11,{marginTop:8})}>Searching for undervalued stocks with high breakout potential...</div>
+                </div>
+              )}
+
+              {dynamicGems&&!gemsLoading&&(
+                <div style={{background:`${PURPLE}08`,border:`1px solid ${PURPLE}22`,borderRadius:8,padding:"12px 16px",marginBottom:18,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+                  <div style={fm(MUTED,12,{flex:1})}>{dynamicGems.marketContext}</div>
+                  <div style={fm(MUTED,11)}>Updated: {dynamicGems.lastUpdated}</div>
+                </div>
+              )}
+
+              {/* Dynamic gems grid */}
+              {dynamicGems&&!gemsLoading&&(
+                <div style={{marginBottom:24}}>
+                  <div style={fm(PURPLE,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:12})}>🤖 AI-Detected Opportunities ({dynamicGems.gems?.length} gems found)</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
+                    {dynamicGems.gems?.map((gem,i)=>{
+                      const c=CONFIDENCE_MAP[gem.verdict]||CONFIDENCE_MAP["BUY"];
+                      return(
+                        <div key={i} style={{background:CARD,border:`1px solid ${c.color}33`,borderRadius:8,padding:18}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                            <div>
+                              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                                <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:2}}>{gem.ticker}</span>
+                                <Tag label={gem.verdict} color={c.color}/>
+                              </div>
+                              <div style={fm(MUTED,12,{marginBottom:4})}>{gem.name}</div>
+                              <Tag label={gem.sector} color={MUTED}/>
+                            </div>
+                            <div style={{textAlign:"center"}}>
+                              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:GREEN}}>{gem.upside}</div>
+                              <div style={fm(MUTED,10)}>UPSIDE</div>
+                            </div>
+                          </div>
+                          <div style={{background:DIM,borderRadius:5,padding:"8px 12px",marginBottom:10,borderLeft:`2px solid ${PURPLE}`}}>
+                            <div style={fm(PURPLE,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:3,fontWeight:700})}>Why This Gem</div>
+                            <p style={fm("#9a8ab5",12,{lineHeight:1.7})}>{gem.why}</p>
+                          </div>
+                          <div style={{background:DIM,borderRadius:5,padding:"8px 12px",marginBottom:10,borderLeft:`2px solid ${GOLD}`}}>
+                            <div style={fm(GOLD,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:3,fontWeight:700})}>Upcoming Catalyst</div>
+                            <p style={fm("#9a8a6a",12,{lineHeight:1.7})}>{gem.catalyst}</p>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}>
+                            <Tag label={`${gem.confidence}% CONFIDENCE`} color={c.color}/>
+                            <Tag label={`⏱ ${gem.timeframe}`} color={MUTED}/>
+                            <Tag label={`Mkt Cap: ${gem.marketCap}`} color={MUTED}/>
+                          </div>
+                          {gem.risk&&<div style={{marginTop:8,fontSize:11,color:"#6a5a7a",fontFamily:"'DM Sans',sans-serif"}}><strong>Risk:</strong> {gem.risk}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Static gems as fallback */}
+              <div style={{marginTop:dynamicGems?24:0}}>
+                {dynamicGems&&<div style={fm(MUTED,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:12})}>📋 Standard Watchlist Gems</div>}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
+                  {HIDDEN_GEMS.map(gem=><GemCard key={gem.ticker} gem={gem} subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>)}
+                </div>
+              </div>
             </div>
           )}
           {tab==="ipos"&&(
             <div>
-              <div style={{marginBottom:18}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:CYAN,letterSpacing:3,textShadow:`0 0 20px ${CYAN}44`,marginBottom:6}}>IPO Watch 🚀</div><p style={fm(MUTED,10,{lineHeight:1.7,maxWidth:600})}>Upcoming IPOs rated by % buy confidence with valuation analysis and comparable multiples.</p><div style={{marginTop:12}}><Legend/></div></div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>{UPCOMING_IPOS.map(ipo=><IPOCard key={ipo.name} ipo={ipo} subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>)}</div>
+              {/* Header */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:18}}>
+                <div>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:CYAN,letterSpacing:3,textShadow:`0 0 20px ${CYAN}44`,marginBottom:4}}>IPO Watch 🚀</div>
+                  <p style={fm(MUTED,12,{lineHeight:1.7,maxWidth:600})}>Real-time upcoming IPOs with AI profit analysis — updated as new filings emerge</p>
+                </div>
+                <button onClick={onRefresh} style={{background:`${CYAN}18`,border:`1px solid ${CYAN}44`,color:CYAN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"9px 18px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
+                  {ipoLoading?"🔍 SCANNING...":"🔄 REFRESH IPO LIST"}
+                </button>
+              </div>
+              <div style={{marginBottom:16}}><Legend/></div>
+
+              {/* Dynamic IPO loading */}
+              {ipoLoading&&(
+                <div style={{textAlign:"center",padding:"24px 0",marginBottom:16}}>
+                  <div style={fm(CYAN,12,{letterSpacing:1,marginBottom:10,fontWeight:600})}>SCANNING FOR LATEST IPO FILINGS...</div>
+                  <div style={{display:"flex",justifyContent:"center",gap:3}}>{Array.from({length:9},(_,i)=><div key={i} style={{width:3,height:18,background:CYAN,borderRadius:2,animation:`barAnim 0.9s ease-in-out ${i*0.08}s infinite alternate`,opacity:0.75}}/>)}</div>
+                  <div style={fm(MUTED,11,{marginTop:8})}>Searching SEC filings, news, and financial data for upcoming IPOs...</div>
+                </div>
+              )}
+
+              {/* Dynamic IPO market note */}
+              {dynamicIPOs&&!ipoLoading&&(
+                <div style={{background:`${CYAN}08`,border:`1px solid ${CYAN}22`,borderRadius:8,padding:"12px 16px",marginBottom:18,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+                  <div style={fm(MUTED,12,{flex:1})}>{dynamicIPOs.marketNote}</div>
+                  <div style={fm(MUTED,11)}>Updated: {dynamicIPOs.lastUpdated}</div>
+                </div>
+              )}
+
+              {/* Dynamic IPO grid */}
+              {dynamicIPOs&&!ipoLoading&&(
+                <div style={{marginBottom:28}}>
+                  <div style={fm(CYAN,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:12})}>🤖 Latest IPO Intelligence ({dynamicIPOs.ipos?.length} opportunities)</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
+                    {dynamicIPOs.ipos?.map((ipo,i)=>{
+                      const c=CONFIDENCE_MAP[ipo.verdict]||CONFIDENCE_MAP["SPECULATIVE"];
+                      return(
+                        <div key={i} style={{background:CARD,border:`1px solid ${c.color}33`,borderRadius:8,padding:18}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                            <div>
+                              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                                <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:WHITE,letterSpacing:2}}>{ipo.ticker||"TBD"}</span>
+                                <Tag label={ipo.verdict} color={c.color}/>
+                              </div>
+                              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:CYAN,letterSpacing:1,marginBottom:3}}>{ipo.name}</div>
+                              <Tag label={ipo.sector} color={MUTED}/>
+                            </div>
+                            <div style={{textAlign:"center"}}>
+                              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:c.color}}>{ipo.buyConfidence}%</div>
+                              <div style={fm(MUTED,10)}>BUY CONF</div>
+                            </div>
+                          </div>
+                          <p style={fm(MUTED,12,{lineHeight:1.7,marginBottom:10})}>{ipo.description}</p>
+                          <div style={{background:DIM,borderRadius:5,padding:"8px 12px",marginBottom:10,borderLeft:`2px solid ${CYAN}`}}>
+                            <div style={fm(CYAN,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:3,fontWeight:700})}>Why Now</div>
+                            <p style={fm("#6a9aaa",12,{lineHeight:1.7})}>{ipo.whyNow}</p>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
+                            <Tag label={`📅 ${ipo.estTiming}`} color={MUTED}/>
+                            <Tag label={ipo.valuation} color={GOLD}/>
+                            <Tag label={ipo.profitPotential} color={ipo.profitPotential==="HIGH"?GREEN:ipo.profitPotential==="MEDIUM"?GOLD:PURPLE}/>
+                          </div>
+                          {ipo.risks&&<div style={{marginTop:8,fontSize:11,color:"#5a7a8a",fontFamily:"'DM Sans',sans-serif"}}><strong>Risk:</strong> {ipo.risks}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Static IPOs as fallback */}
+              <div>
+                {dynamicIPOs&&<div style={fm(MUTED,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:12})}>📋 Previously Tracked IPOs</div>}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
+                  {UPCOMING_IPOS.map(ipo=><IPOCard key={ipo.name} ipo={ipo} subscribed={subscribed} onPaywall={onPaywall}/>)}
+                </div>
+              </div>
             </div>
           )}
           {tab==="portfolio"&&<Portfolio subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>}
