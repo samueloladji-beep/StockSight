@@ -1674,7 +1674,7 @@ export default function App(){
 
         <div style={{borderTop:`1px solid ${BORDER}`,padding:"11px 28px",display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
           <span style={fm("#1a2230",8)}>STOCKSIGHT © 2026 — FOR INFORMATIONAL PURPOSES ONLY. NOT FINANCIAL ADVICE. ALL CONGRESSIONAL & HEDGE FUND DATA IS FROM PUBLIC DISCLOSURES.</span>
-          <span style={fm("#1a2230",12)}>POWERED BY CLAUDE AI + LIVE WEB SEARCH • FOR INFORMATIONAL PURPOSES ONLY — NOT FINANCIAL ADVICE</span>
+          <span style={fm("#1a2230",12)}>FOR INFORMATIONAL PURPOSES ONLY — NOT FINANCIAL ADVICE</span>
           <div style={{display:"flex",gap:16,justifyContent:"center",marginTop:8}}>
             <button onClick={()=>setShowTerms(true)} style={{background:"none",border:"none",color:"#2a3a4a",fontFamily:"'DM Sans',sans-serif",fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Terms of Service</button>
             <button onClick={()=>setShowPrivacy(true)} style={{background:"none",border:"none",color:"#2a3a4a",fontFamily:"'DM Sans',sans-serif",fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Privacy Policy</button>
