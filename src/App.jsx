@@ -1194,9 +1194,7 @@ function Paywall({onClose,onSubscribe}){
 
 // ─── LEGAL COMPONENTS ────────────────────────────────────────────────────────
 function DisclaimerBanner({onViewTerms, onViewPrivacy}){
-  const [dismissed, setDismissed] = React.useState(
-    ()=>localStorage.getItem("disclaimer_accepted")==="true"
-  );
+  const [dismissed, setDismissed] = useState(false);
   if(dismissed) return null;
   return(
     <div style={{background:"#0a0e16",borderBottom:`1px solid ${GOLD}44`,padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,position:"sticky",top:0,zIndex:500}}>
@@ -1209,7 +1207,7 @@ function DisclaimerBanner({onViewTerms, onViewPrivacy}){
       <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
         <button onClick={onViewTerms} style={{background:"none",border:"none",color:BLUE,fontFamily:"'DM Sans',sans-serif",fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Terms</button>
         <button onClick={onViewPrivacy} style={{background:"none",border:"none",color:BLUE,fontFamily:"'DM Sans',sans-serif",fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Privacy</button>
-        <button onClick={()=>{localStorage.setItem("disclaimer_accepted","true");setDismissed(true);}} style={{background:GOLD+"22",border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:11,padding:"4px 12px",borderRadius:4,cursor:"pointer"}}>I Understand</button>
+        <button onClick={()=>setDismissed(true)} style={{background:GOLD+"22",border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:11,padding:"4px 12px",borderRadius:4,cursor:"pointer"}}>I Understand</button>
       </div>
     </div>
   );
