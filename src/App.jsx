@@ -1379,12 +1379,12 @@ export default function App(){
     if(!customTicker.trim()) return;
     if(!subscribed && analysesUsed >= FREE_LIMIT){setShowPaywall(true);return;}
     setCustomLoading(true);
-    const ticker = customTicker.toUpperCase().trim();
+    const input = customTicker.trim();
     try {
       const r = await callAI(STOCK_SYSTEM,
-        `Analyze ${ticker}. Search for: company name, sector, latest earnings report, analyst ratings, recent news, and growth catalysts. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`
+        `The user searched for: "${input}". This could be a stock ticker symbol OR a company name. First identify the correct US stock ticker symbol for this input (e.g. if user typed "Apple" use AAPL, if "Nvidia" use NVDA, if "Tesla" use TSLA). Then analyze that stock. Search for: company name, ticker symbol, sector, latest earnings report, analyst ratings, recent news, and growth catalysts. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`
       );
-      setCustomStock({ticker, result: r});
+      setCustomStock({ticker: r?.ticker||input.toUpperCase(), result: r});
       if(!subscribed) setAnalysesUsed(p=>p+1);
     } catch(e) {
       alert("Could not analyze " + ticker + ". Please check the ticker symbol and try again.");
@@ -1472,7 +1472,7 @@ export default function App(){
                   <input
                     placeholder="Enter ticker (e.g. TSLA, PLTR, IONQ, ABNB...)"
                     value={customTicker}
-                    onChange={e=>setCustomTicker(e.target.value.toUpperCase())}
+                    onChange={e=>setCustomTicker(e.target.value)}
                     onKeyDown={e=>e.key==="Enter"&&analyzeCustomTicker()}
                     style={{background:DIM,border:`1px solid ${GREEN}55`,color:WHITE,fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,padding:"10px 14px",borderRadius:5,width:280,outline:"none"}}
                   />
@@ -1481,7 +1481,7 @@ export default function App(){
                   </button>
                   {customStock&&<button onClick={()=>setCustomStock(null)} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,fontFamily:"'Space Mono',monospace",fontSize:12,padding:"10px 14px",borderRadius:5,cursor:"pointer"}}>✕ Clear</button>}
                 </div>
-                <div style={fm(MUTED,12,{marginTop:8})}>Press Enter or click Analyze — works for any US-listed stock or ETF</div>
+                <div style={fm(MUTED,12,{marginTop:8})}>Works with ticker symbols (AAPL) or company names (Apple) — press Enter or click Analyze</div>
               </div>
 
               {/* Custom stock result */}
