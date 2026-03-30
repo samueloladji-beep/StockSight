@@ -574,7 +574,9 @@ const DYNAMIC_OPTIONS_SYSTEM = `You are an elite options trader and market analy
 
 // ─── DAY TRADING SYSTEM PROMPTS ──────────────────────────────────────────────
 
-const MOMENTUM_MOVERS_SYSTEM = `You are an elite day trading analyst with real-time market access. Search for stocks that are moving significantly RIGHT NOW or in after-hours/pre-market trading. Include stocks with earnings releases, news catalysts, unusual volume, and technical breakouts. Return ONLY valid JSON (no markdown):
+const MOMENTUM_MOVERS_SYSTEM = `You are an elite day trading analyst with real-time market access. Search for stocks that are moving significantly RIGHT NOW or in after-hours/pre-market trading. Include stocks with earnings releases, news catalysts, unusual volume, and technical breakouts.
+
+CRITICAL: Only include REAL stocks with REAL ticker symbols that actually exist on US exchanges. NEVER invent or use placeholder tickers like ABCD, XYZW, LMNO, or any fictional company. If the market is closed and there are no significant movers right now, return an empty topMovers array and explain in marketHighlight what is happening (e.g. "Market closed, next session opens at 9:30 AM ET. Check back during market hours for live movers."). Return ONLY valid JSON (no markdown):
 {
   "timestamp": "Month DD YYYY HH:MM ET",
   "marketSession": "PRE-MARKET"|"REGULAR"|"AFTER-HOURS"|"CLOSED",
@@ -605,7 +607,9 @@ const MOMENTUM_MOVERS_SYSTEM = `You are an elite day trading analyst with real-t
   "marketHighlight": "Most important market development happening right now in 2 sentences"
 }`;
 
-const SCALP_SETUPS_SYSTEM = `You are a professional scalp trader specializing in intraday momentum plays. Search for the best scalping opportunities right now — stocks with clear technical setups, high liquidity, and catalyst-driven momentum for quick 1-5% gains. Return ONLY valid JSON (no markdown):
+const SCALP_SETUPS_SYSTEM = `You are a professional scalp trader specializing in intraday momentum plays. Search for the best scalping opportunities right now — stocks with clear technical setups, high liquidity, and catalyst-driven momentum for quick 1-5% gains.
+
+CRITICAL: Only use REAL ticker symbols of stocks that actually exist on US exchanges. NEVER use placeholder or fictional tickers. If the market is closed and no real scalp setups exist right now, return an empty setups array and note that "Scalp setups are most relevant during market hours 9:30 AM - 4:00 PM ET and pre-market 4:00-9:30 AM ET." Return ONLY valid JSON (no markdown):
 {
   "timestamp": "Month DD YYYY HH:MM ET",
   "session": "PRE-MARKET"|"REGULAR"|"AFTER-HOURS"|"CLOSED",
@@ -631,7 +635,7 @@ const SCALP_SETUPS_SYSTEM = `You are a professional scalp trader specializing in
   ]
 }`;
 
-const SHORT_SQUEEZE_SYSTEM = `You are a short squeeze specialist. Search for stocks with high short interest that are showing signs of an active or imminent short squeeze. Look for: high short float %, rising price despite sell pressure, increasing volume, positive catalysts, and gamma squeeze potential. Return ONLY valid JSON (no markdown):
+const SHORT_SQUEEZE_SYSTEM = `You are a short squeeze specialist. Search for stocks with high short interest that are showing signs of an active or imminent short squeeze. CRITICAL: Only use REAL ticker symbols and company names. Never invent fictional tickers. Look for: high short float %, rising price despite sell pressure, increasing volume, positive catalysts, and gamma squeeze potential. Return ONLY valid JSON (no markdown):
 {
   "timestamp": "Month DD YYYY HH:MM ET",
   "candidates": [
@@ -657,7 +661,9 @@ const SHORT_SQUEEZE_SYSTEM = `You are a short squeeze specialist. Search for sto
   "summary": "1 sentence on current short squeeze environment"
 }`;
 
-const AFTERHOURS_SYSTEM = `You are a market analyst specializing in after-hours and pre-market trading. Search for stocks with significant price movements happening RIGHT NOW in after-hours or pre-market trading. Find earnings releases, news events, analyst actions, and any other catalysts driving after-hours moves. Return ONLY valid JSON (no markdown):
+const AFTERHOURS_SYSTEM = `You are a market analyst specializing in after-hours and pre-market trading. Search for stocks with significant price movements happening RIGHT NOW in after-hours or pre-market trading. Find earnings releases, news events, analyst actions, and any other catalysts driving after-hours moves.
+
+CRITICAL: Only use REAL company names and REAL ticker symbols that actually trade on US exchanges. NEVER invent placeholder tickers like ABCD, XYZW, LMNO or fictional companies. If there are no significant after-hours movers right now, return an empty bigMovers array and set summary to "No significant after-hours activity at this time. Markets are most active 4:00-8:00 PM ET after earnings releases." Return ONLY valid JSON (no markdown):
 {
   "timestamp": "Month DD YYYY HH:MM ET",
   "session": "AFTER-HOURS"|"PRE-MARKET"|"CLOSED",
@@ -695,7 +701,9 @@ const AFTERHOURS_SYSTEM = `You are a market analyst specializing in after-hours 
   "summary": "2 sentences on key after-hours developments and what to watch tomorrow"
 }`;
 
-const PREMARKET_SYSTEM = `You are a pre-market trading specialist. Search for stocks showing significant pre-market activity and identify the best day trading opportunities for today's market open. Return ONLY valid JSON (no markdown):
+const PREMARKET_SYSTEM = `You are a pre-market trading specialist. Search for stocks showing significant pre-market activity and identify the best day trading opportunities for today's market open.
+
+CRITICAL: Only use REAL company names and REAL ticker symbols that actually trade on US exchanges. NEVER invent placeholder tickers like ABCD, XYZW, LMNO or fictional companies. If pre-market data is limited (e.g. middle of the night), return what real data is available and note in dayTradingBias that "Pre-market activity is limited at this hour. Most pre-market action occurs 4:00-9:30 AM ET." Return ONLY valid JSON (no markdown):
 {
   "timestamp": "Month DD YYYY HH:MM ET",
   "marketOutlook": "BULLISH OPEN"|"BEARISH OPEN"|"FLAT OPEN"|"VOLATILE OPEN",
@@ -1923,7 +1931,7 @@ export default function App(){
     setDtMomentumLoading(true);
     try {
       const r = await callAI(MOMENTUM_MOVERS_SYSTEM,
-        `Search for stocks moving significantly RIGHT NOW. Check after-hours trading, pre-market movers, and any stocks with breaking news catalysts. Include earnings releases, analyst upgrades/downgrades, FDA decisions, contract wins, and any other catalysts causing big price moves today. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
+        `Search for stocks moving significantly RIGHT NOW with REAL ticker symbols only. Check after-hours trading, pre-market movers, and any stocks with breaking news catalysts. If the market is currently closed with no significant movers, say so clearly. Include earnings releases, analyst upgrades/downgrades, FDA decisions, contract wins, and any other catalysts causing big price moves today. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
         "perplexity"
       );
       setDtMomentum(r);
@@ -1959,7 +1967,7 @@ export default function App(){
     setDtAfterHoursLoading(true);
     try {
       const r = await callAI(AFTERHOURS_SYSTEM,
-        `Search for all significant after-hours and pre-market stock movements happening RIGHT NOW. Find earnings releases after market close today, stocks gapping up or down significantly, any breaking news moving stocks in extended hours trading. Include earnings results with actual vs estimated EPS and revenue figures. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
+        `Search for all significant after-hours and pre-market stock movements happening RIGHT NOW using only REAL ticker symbols. If there are no real movers at this hour, return empty results and explain when to check back. Find earnings releases after market close today, stocks gapping up or down significantly, any breaking news moving stocks in extended hours trading. Include earnings results with actual vs estimated EPS and revenue figures. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
         "perplexity"
       );
       setDtAfterHours(r);
