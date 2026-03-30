@@ -2614,7 +2614,6 @@ export default function App(){
               </div>
             </div>
           )}
-          {
           {tab==="watchlist"&&(
             <div>
               <div style={{marginBottom:16}}><Legend/></div>
