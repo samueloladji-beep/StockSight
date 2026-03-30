@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
-const FREE_LIMIT = 2;
+const FREE_LIMIT = 999;
 const BG     = "#07090d";
 const CARD   = "#0d1117";
 const BORDER = "#161c26";
