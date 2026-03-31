@@ -378,49 +378,58 @@ const SMART_MONEY_SYSTEM = `You are a financial intelligence analyst. Search for
   "dataSource": "Source name"
 }`;
 
-const DYNAMIC_WATCHLIST_SYSTEM = `You are a quantitative portfolio analyst with real-time market access. It is ${new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}. Search for the 15 highest profit-potential stocks RIGHT NOW based on today's market conditions. Consider: momentum leaders, earnings catalysts this week, sector rotation, analyst upgrades today, unusual volume. Return ONLY valid JSON (no markdown):
+const DYNAMIC_WATCHLIST_SYSTEM = `You are a senior portfolio manager at a top-tier hedge fund with real-time market access. Your job is to curate the highest-conviction, highest-profit-potential stock picks for this week. Search for current market data. Prioritize: stocks with strong earnings momentum, sector leaders with institutional buying, upcoming catalysts (earnings, FDA decisions, product launches, analyst upgrades), and technically strong setups at key breakout levels. Eliminate any stock that is speculative without a clear near-term catalyst. Return ONLY valid JSON (no markdown):
 {
   "generatedAt": "Month DD YYYY HH:MM ET",
-  "marketContext": "2 sentences on current market conditions driving these picks today",
+  "weekOf": "Week of Month DD YYYY",
+  "marketContext": "2 sentences on the market environment this week and what is driving opportunities",
   "marketBias": "BULLISH"|"BEARISH"|"MIXED"|"VOLATILE",
+  "editorNote": "1 sentence on your highest conviction theme this week",
   "stocks": [
     {
       "ticker": "XXXX",
       "name": "Full Company Name",
       "sector": "Sector",
-      "tag": "AI"|"MOMENTUM"|"VALUE"|"GROWTH"|"EARNINGS"|"BREAKOUT"|"HOT"|"DIVIDEND",
+      "tag": "MOMENTUM"|"VALUE"|"GROWTH"|"EARNINGS"|"BREAKOUT"|"CATALYST"|"INSTITUTIONAL",
       "price": "$XXX.XX",
       "changeToday": "+/-X.X%",
-      "whyToday": "Why this stock has high profit potential specifically TODAY",
-      "catalyst": "Specific upcoming or recent catalyst",
+      "weeklyChange": "+/-X.X%",
+      "whyThisWeek": "Why this stock has high profit potential THIS WEEK specifically — be precise",
+      "catalyst": "Specific upcoming catalyst with date if known",
+      "technicalSetup": "Key technical level or pattern",
       "confidence": 0-100,
       "verdict": "STRONG BUY"|"BUY"|"SPECULATIVE",
       "target": "$XXX",
-      "stopLoss": "$XXX"
+      "stopLoss": "$XXX",
+      "timeframe": "Days or weeks to target"
     }
   ]
 }`;
 
-const TRENDING_SYSTEM = `You are a market intelligence analyst with real-time access. Search for the hottest stocks RIGHT NOW based on unusual options activity, social buzz, analyst upgrades, earnings beats, and momentum. Only use REAL ticker symbols. Return ONLY valid JSON (no markdown):
+const TRENDING_SYSTEM = `You are a market intelligence desk analyst at a premier trading firm. Your role is to surface the highest-profit-potential stocks with active momentum RIGHT NOW — not just what is trending socially, but what has real institutional sponsorship, unusual options flow, and a credible near-term catalyst. Only use REAL ticker symbols. Return ONLY valid JSON (no markdown):
 {
   "lastUpdated": "Month DD YYYY HH:MM ET",
   "marketMood": "BULLISH"|"BEARISH"|"MIXED"|"VOLATILE",
-  "moodReason": "1 sentence on overall market sentiment right now",
+  "moodReason": "1 sentence on the dominant market force right now",
   "trending": [
     {
       "ticker": "XXXX",
       "name": "Full Company Name",
       "sector": "Sector",
-      "reason": "Why it is trending right now in 1 sentence",
-      "catalyst": "Specific catalyst",
+      "reason": "Precise reason this has high profit potential right now",
+      "catalyst": "Specific catalyst — earnings date, news event, technical breakout level",
+      "unusualFlow": true,
       "momentum": "STRONG"|"MODERATE"|"EARLY",
       "profitPotential": "HIGH"|"MEDIUM"|"SPECULATIVE",
+      "entry": "$XXX",
+      "target": "$XXX",
+      "stopLoss": "$XXX",
       "confidence": 0-100,
       "verdict": "STRONG BUY"|"BUY"|"SPECULATIVE"
     }
   ],
   "topPickToday": "TICKER",
-  "topPickReason": "2 sentences on why this is the best opportunity today"
+  "topPickReason": "2 sentences on why this is the single best opportunity right now"
 }`;
 
 const DYNAMIC_SMART_MONEY_SYSTEM = `You are a financial intelligence analyst. Search for the most recent congressional STOCK Act trade disclosures and SEC 13F filings. ONLY use REAL names and REAL tickers. If no real recent data, return empty recentActivity array. Return ONLY valid JSON:
@@ -443,7 +452,7 @@ const DYNAMIC_SMART_MONEY_SYSTEM = `You are a financial intelligence analyst. Se
   "summary": "2 sentence summary of smart money activity right now"
 }`;
 
-const DYNAMIC_IPO_SYSTEM = `You are an IPO research analyst. Search for the most current upcoming IPOs. ONLY use REAL companies with REAL tickers or expected tickers. Return ONLY valid JSON:
+const DYNAMIC_IPO_SYSTEM = `You are a senior IPO analyst at an investment bank. Search for the most current IPO pipeline. Evaluate each on: valuation vs peers, revenue growth, path to profitability, lock-up expiry risk, and first-day pop potential. Only include companies with real filed S-1s or confirmed IPO dates. ONLY use REAL companies. Return ONLY valid JSON:
 {
   "lastUpdated": "Month DD YYYY",
   "marketNote": "1 sentence on current IPO market",
@@ -464,60 +473,72 @@ const DYNAMIC_IPO_SYSTEM = `You are an IPO research analyst. Search for the most
   ]
 }`;
 
-const DYNAMIC_GEMS_SYSTEM = `You are a small/mid-cap analyst. Search for currently undervalued breakout stocks. ONLY use REAL tickers. Return ONLY valid JSON:
+const DYNAMIC_GEMS_SYSTEM = `You are a veteran small and mid-cap fund manager. Your edge is finding overlooked, undervalued stocks before institutions pile in. Search for stocks that are: trading below intrinsic value with an imminent re-rating catalyst, seeing insider buying or institutional accumulation, breaking out of long consolidation bases, or benefiting from a sector tailwind the market has not yet priced in. Minimum market cap $300M. ONLY use REAL tickers. Return ONLY valid JSON:
 {
   "lastUpdated": "Month DD YYYY",
-  "marketContext": "Why these gems are compelling now",
+  "weekOf": "Week of Month DD YYYY",
+  "marketContext": "1-2 sentences on why this is a good environment for small/mid-cap gems right now",
   "gems": [
     {
       "ticker": "XXXX",
       "name": "Full Company Name",
       "sector": "Sector",
       "marketCap": "$XB",
-      "why": "Why this is a hidden gem now",
-      "catalyst": "Upcoming catalyst",
+      "price": "$XXX.XX",
+      "why": "Precise thesis — why this is undervalued and poised to move",
+      "catalyst": "Specific upcoming catalyst with approximate timing",
+      "insiderActivity": "Insider buying/selling activity if known",
       "upside": "+XX%",
-      "timeframe": "3-6 months",
+      "priceTarget": "$XXX",
+      "stopLoss": "$XXX",
+      "timeframe": "Weeks or months",
       "confidence": 0-100,
       "verdict": "STRONG BUY"|"BUY"|"SPECULATIVE",
-      "risk": "Main risk"
+      "risk": "Main risk to the thesis"
     }
   ]
 }`;
 
-const DYNAMIC_OPTIONS_SYSTEM = `You are an elite options trader. Search for the best options opportunities RIGHT NOW based on unusual activity, high IV, earnings plays. ONLY use REAL tickers. If market closed, return empty arrays. Return ONLY valid JSON:
+const DYNAMIC_OPTIONS_SYSTEM = `You are the head options strategist at a top derivatives desk. Identify the highest-probability options trades available RIGHT NOW. Prioritize: stocks with earnings within 2 weeks (high IV crush potential), unusual call or put sweeps above $500K notional, stocks at key technical breakout levels, and sector leaders with defined catalysts. For each trade specify the exact contract. ONLY use REAL tickers. Return ONLY valid JSON:
 {
   "lastUpdated": "Month DD YYYY HH:MM ET",
   "marketVIX": "XX.X",
   "marketCondition": "LOW VOL"|"NORMAL"|"HIGH VOL"|"EXTREME",
+  "vixTrend": "RISING"|"FALLING"|"STABLE",
   "topOpportunities": [
     {
       "ticker": "XXXX",
       "name": "Company Name",
-      "strategy": "Strategy",
-      "signal": "Why compelling now",
+      "stockPrice": "$XXX.XX",
+      "strategy": "Specific strategy name",
+      "signal": "Precise reason this is the best options trade right now",
       "strike": "$XXX",
       "expiry": "Month DD YYYY",
-      "type": "CALL"|"PUT"|"SPREAD",
+      "type": "CALL"|"PUT"|"SPREAD"|"CONDOR",
       "riskLevel": "CONSERVATIVE"|"MODERATE"|"AGGRESSIVE",
+      "estimatedPremium": "$X.XX",
       "maxProfit": "+XX%",
       "maxLoss": "-XX%",
+      "breakeven": "$XXX",
       "confidence": 0-100,
-      "catalyst": "Specific catalyst",
-      "unusualActivity": true
+      "catalyst": "Specific dated catalyst",
+      "unusualActivity": true,
+      "daysToExpiry": "XX days"
     }
   ],
   "unusualActivityAlerts": [
     {
       "ticker": "XXXX",
-      "activity": "Description",
+      "activity": "Specific description — e.g. 5,000 calls swept at $X.XX",
       "bullish": true,
-      "size": "$XXM"
+      "size": "$XXM",
+      "expiry": "Month DD YYYY"
     }
-  ]
+  ],
+  "earningsPlays": ["TICKER1 — Month DD","TICKER2 — Month DD"]
 }`;
 
-const MOMENTUM_MOVERS_SYSTEM = `You are an elite day trading analyst. Search for stocks moving significantly RIGHT NOW or in after-hours/pre-market. CRITICAL: ONLY use REAL ticker symbols. If no real movers, return empty topMovers array and explain in marketHighlight. Return ONLY valid JSON:
+const MOMENTUM_MOVERS_SYSTEM = `You are the head of a professional day trading desk. Your job is to identify the highest-conviction intraday trades available RIGHT NOW — stocks with genuine price momentum, real catalysts, clear technical setups, and favorable risk/reward ratios. Exclude low-float penny stocks. Prioritize liquid, exchange-listed stocks with institutional participation. ONLY use REAL ticker symbols. Return ONLY valid JSON:
 {
   "timestamp": "Month DD YYYY HH:MM ET",
   "marketSession": "PRE-MARKET"|"REGULAR"|"AFTER-HOURS"|"CLOSED",
@@ -532,67 +553,85 @@ const MOMENTUM_MOVERS_SYSTEM = `You are an elite day trading analyst. Search for
       "changePct": "+XX.X%",
       "direction": "UP"|"DOWN",
       "volume": "XXM (Xx avg)",
-      "catalyst": "Exact reason",
+      "catalyst": "Exact reason with specifics — earnings beat, upgrade, news event",
       "session": "REGULAR"|"AFTER-HOURS"|"PRE-MARKET",
       "momentum": "STRONG"|"BUILDING"|"FADING",
       "entryZone": "$XXX-$XXX",
       "target1": "$XXX",
+      "target2": "$XXX",
       "stopLoss": "$XXX",
       "riskReward": "1:X",
       "confidence": 0-100,
       "signal": "STRONG BUY"|"BUY"|"WATCH"|"SHORT"
     }
   ],
-  "marketHighlight": "Most important development right now"
+  "marketHighlight": "Most important development driving the market right now",
+  "bestDayTradeSetup": "TICKER — 1 sentence on why this is the top intraday setup"
 }`;
 
-const SCALP_SETUPS_SYSTEM = `You are a professional scalp trader. Search for the best scalping opportunities right now. ONLY use REAL tickers. If market closed, return empty setups array. Return ONLY valid JSON:
+const SCALP_SETUPS_SYSTEM = `You are a professional scalp trader with a live feed to market data. Identify the cleanest, highest-probability scalp setups available RIGHT NOW. Focus only on liquid, high-volume stocks (avg volume >2M/day) with clear technical levels. Each setup must have a defined catalyst, precise entry trigger, and tight stop. ONLY use REAL tickers. If market is closed, return empty setups array. Return ONLY valid JSON:
 {
   "timestamp": "Month DD YYYY HH:MM ET",
   "session": "PRE-MARKET"|"REGULAR"|"AFTER-HOURS"|"CLOSED",
+  "marketCondition": "Trending"|"Range-Bound"|"Volatile"|"Low Volume",
   "setups": [
     {
       "ticker": "XXXX",
       "name": "Company Name",
-      "setupType": "Breakout"|"Pullback"|"Gap and Go"|"Reversal"|"Squeeze Play",
+      "currentPrice": "$XXX.XX",
+      "avgVolume": "XXM/day",
+      "setupType": "Breakout"|"Pullback"|"Gap and Go"|"Reversal"|"Squeeze Play"|"VWAP Reclaim",
       "timeframe": "1min"|"5min"|"15min",
+      "entryTrigger": "Exact price action trigger — e.g. break above $XXX with volume",
       "entry": "$XXX.XX",
-      "target": "$XXX.XX",
+      "target1": "$XXX.XX",
+      "target2": "$XXX.XX",
       "stopLoss": "$XXX.XX",
       "potentialGain": "+X.X%",
       "maxLoss": "-X.X%",
       "riskReward": "1:X",
-      "catalyst": "What is driving this",
+      "catalyst": "Precise catalyst driving this setup",
       "urgency": "NOW"|"WATCH"|"PENDING",
       "confidence": 0-100,
-      "notes": "Invalidation conditions"
+      "notes": "Key invalidation level and what to watch for"
     }
-  ]
+  ],
+  "avoidList": ["TICKER1","TICKER2"],
+  "avoidReason": "Why to avoid these today"
 }`;
 
-const SHORT_SQUEEZE_SYSTEM = `You are a short squeeze specialist. Search for stocks with high short interest showing squeeze signs. ONLY use REAL tickers. Return ONLY valid JSON:
+const SHORT_SQUEEZE_SYSTEM = `You are a short interest analyst specializing in identifying gamma and short squeezes before they peak. Search for stocks with: short float above 15%, days-to-cover above 3, recent unusual call buying, positive news catalyst, and price beginning to move against shorts. Rank by squeeze probability. ONLY use REAL tickers. Return ONLY valid JSON:
 {
   "timestamp": "Month DD YYYY HH:MM ET",
+  "squeezeEnvironment": "FAVORABLE"|"NEUTRAL"|"UNFAVORABLE",
+  "environmentNote": "1 sentence on current market conditions for squeezes",
   "candidates": [
     {
       "ticker": "XXXX",
       "name": "Company Name",
+      "currentPrice": "$XXX.XX",
       "shortFloat": "XX%",
+      "shortInterest": "XX million shares",
       "daysToCover": "X.X days",
+      "borrowRate": "XX% annually",
       "squeezeStage": "BUILDING"|"ACTIVE"|"IMMINENT"|"COOLING",
-      "catalyst": "What could trigger the squeeze",
+      "catalyst": "Specific catalyst that could force shorts to cover",
+      "unusualCallActivity": true,
       "entryZone": "$XXX-$XXX",
       "squeezeTarget": "$XXX",
+      "conservativeTarget": "$XXX",
       "stopLoss": "$XXX",
+      "squeezeProbability": "HIGH"|"MEDIUM"|"LOW",
       "confidence": 0-100,
-      "risk": "Main risk"
+      "risk": "Main risk — e.g. dilution, weak fundamentals"
     }
   ],
   "activeSqueezes": ["TICKER1","TICKER2"],
-  "summary": "1 sentence on current squeeze environment"
+  "watchForSqueeze": ["TICKER3","TICKER4"],
+  "summary": "2 sentences on the current short squeeze landscape"
 }`;
 
-const AFTERHOURS_SYSTEM = `You are an after-hours specialist. Search for stocks moving in extended hours RIGHT NOW. ONLY use REAL company names and REAL tickers. If no real movers, return empty bigMovers array. Return ONLY valid JSON:
+const AFTERHOURS_SYSTEM = `You are an after-hours specialist. Search for stocks moving in extended hours RIGHT NOW. ONLY use REAL company names and REAL tickers verified against market data. Focus on moves with actionable next-day setups — earnings beats/misses, guidance raises/cuts, M&A, FDA decisions. Include specific trading plans with levels. Return ONLY valid JSON:
 {
   "timestamp": "Month DD YYYY HH:MM ET",
   "session": "AFTER-HOURS"|"PRE-MARKET"|"CLOSED",
@@ -626,7 +665,7 @@ const AFTERHOURS_SYSTEM = `You are an after-hours specialist. Search for stocks 
   "summary": "2 sentences on key after-hours developments"
 }`;
 
-const PREMARKET_SYSTEM = `You are a pre-market specialist. Search for pre-market movers and futures. ONLY use REAL tickers. Return ONLY valid JSON:
+const PREMARKET_SYSTEM = `You are the pre-market desk analyst at a trading firm. Search for pre-market movers, overnight futures, and economic events. Identify the most actionable gap plays and provide a concrete day-trading bias for each mover. ONLY use REAL tickers. Return ONLY valid JSON:
 {
   "timestamp": "Month DD YYYY HH:MM ET",
   "marketOutlook": "BULLISH OPEN"|"BEARISH OPEN"|"FLAT OPEN"|"VOLATILE OPEN",
@@ -1105,7 +1144,7 @@ function DynStockCard({stock, subscribed, onPaywall, onUseAnalysis, analysesUsed
           <div>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
               <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:WHITE,letterSpacing:2}}>{stock.ticker}</span>
-              <Tag label={stock.tag||"HOT"} color={c.color}/>
+              <Tag label={stock.tag||"MOMENTUM"} color={c.color}/>
               {stock.verdict&&<Tag label={stock.verdict} color={c.color}/>}
             </div>
             <div style={fm(MUTED,13,{marginBottom:3})}>{stock.name}</div>
@@ -1116,25 +1155,44 @@ function DynStockCard({stock, subscribed, onPaywall, onUseAnalysis, analysesUsed
             {stock.changeToday&&(
               <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,color:stock.changeToday?.startsWith("+")?GREEN:RED}}>{stock.changeToday}</div>
             )}
+            {stock.weeklyChange&&(
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:MUTED}}>Week: {stock.weeklyChange}</div>
+            )}
           </div>
         </div>
         {/* Live chart */}
         <div style={{marginBottom:8,borderRadius:6,overflow:"hidden"}}>
           <LiveMiniChart ticker={stock.ticker} color={c.color}/>
         </div>
-        {/* Why today */}
-        {stock.whyToday&&(
+        {/* Why this week */}
+        {(stock.whyThisWeek||stock.whyToday)&&(
           <div style={{background:CARD,borderRadius:5,padding:"6px 10px",marginBottom:8,borderLeft:`2px solid ${c.color}`}}>
-            <p style={fm("#8a9aaa",12,{lineHeight:1.6})}>{stock.whyToday}</p>
+            <div style={fm(c.color,9,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:2})}>This Week</div>
+            <p style={fm("#8a9aaa",12,{lineHeight:1.6})}>{stock.whyThisWeek||stock.whyToday}</p>
+          </div>
+        )}
+        {/* Catalyst */}
+        {stock.catalyst&&(
+          <div style={{background:CARD,borderRadius:5,padding:"5px 10px",marginBottom:8,borderLeft:`2px solid ${GOLD}`}}>
+            <div style={fm(GOLD,9,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:2})}>Catalyst</div>
+            <p style={fm("#9a8a6a",12,{lineHeight:1.5})}>{stock.catalyst}</p>
+          </div>
+        )}
+        {/* Technical setup */}
+        {stock.technicalSetup&&(
+          <div style={{background:CARD,borderRadius:5,padding:"5px 10px",marginBottom:8,borderLeft:`2px solid ${BLUE}`}}>
+            <div style={fm(BLUE,9,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:2})}>Setup</div>
+            <p style={fm("#6a8aaa",12,{lineHeight:1.5})}>{stock.technicalSetup}</p>
           </div>
         )}
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-          {stock.target&&<Tag label={`T: ${stock.target}`} color={GREEN}/>}
-          {stock.stopLoss&&<Tag label={`SL: ${stock.stopLoss}`} color={RED}/>}
+          {stock.target&&<Tag label={`Target: ${stock.target}`} color={GREEN}/>}
+          {stock.stopLoss&&<Tag label={`Stop: ${stock.stopLoss}`} color={RED}/>}
           {stock.confidence&&<Tag label={`${stock.confidence}% CONF`} color={c.color}/>}
+          {stock.timeframe&&<Tag label={stock.timeframe} color={MUTED}/>}
         </div>
         <button onClick={analyze} disabled={state==="loading"} style={{width:"100%",background:state==="loading"?`${c.color}11`:`linear-gradient(135deg,${c.color}22,${c.color}11)`,border:`1px solid ${c.color}55`,color:state==="done"?MUTED:c.color,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,padding:"10px 0",borderRadius:6,cursor:state==="loading"?"wait":"pointer",textTransform:"uppercase",transition:"all 0.2s"}}>
-          {state==="loading"?"⏳ ANALYZING...":(state==="done"?" ANALYSIS COMPLETE":" ANALYZE WITH LIVE DATA")}
+          {state==="loading"?"ANALYZING...":(state==="done"?"ANALYSIS COMPLETE":"ANALYZE WITH LIVE DATA")}
         </button>
       </div>
       {/* Analysis result */}
@@ -2186,22 +2244,117 @@ export default function App(){
   const saveCache = (key,data)=>{ try{ sessionStorage.setItem(key,JSON.stringify({data,ts:Date.now()})); }catch(e){} };
   const loadCache = (key)=>{ try{ const r=sessionStorage.getItem(key); if(!r) return null; const {data,ts}=JSON.parse(r); return (Date.now()-ts<8*3600*1000)?data:null; }catch(e){ return null; } };
 
-  // Load cached data on mount so sections always show last known data
-  useEffect(()=>{
-    const load = (key, setter) => { const d=loadCache(key); if(d) setter(d); };
-    load(CK.watchlist, setWatchlist);
-    load(CK.trending, setTrending);
-    load(CK.smActivity, setSmActivity);
-    load(CK.dynamicOptions, setDynamicOptions);
-    load(CK.dynamicIPOs, setDynamicIPOs);
-    load(CK.dynamicGems, setDynamicGems);
-    load(CK.dtMomentum, setDtMomentum);
-    load(CK.dtScalps, setDtScalps);
-    load(CK.dtSqueeze, setDtSqueeze);
-    load(CK.dtAfterHours, setDtAfterHours);
-    load(CK.dtPreMarket, setDtPreMarket);
+  // ── Auto-population: load cache + fetch fresh data intelligently ─────────
+  // isMarketOpen: true 9:30am–4:00pm ET Mon–Fri
+  const isMarketOpen = () => {
+    const et = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
+    const day = et.getDay();
+    const mins = et.getHours()*60+et.getMinutes();
+    return day>=1&&day<=5&&mins>=570&&mins<960;
+  };
+  // isExtendedHours: pre-market 4am–9:30am or after-hours 4pm–8pm ET
+  const isExtendedHours = () => {
+    const et = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
+    const day = et.getDay();
+    const mins = et.getHours()*60+et.getMinutes();
+    return day>=1&&day<=5&&((mins>=240&&mins<570)||(mins>=960&&mins<1200));
+  };
+
+  // Staggered auto-fetch so all APIs don't fire simultaneously
+  const autoFetchAll = useCallback(async () => {
+    const open = isMarketOpen();
+    const extended = isExtendedHours();
+    // Helper: fetch only if cache is stale (older than maxAgeMs)
+    const fetchIfStale = async (cacheKey, fetchFn, maxAgeMs=30*60*1000) => {
+      try {
+        const raw = sessionStorage.getItem(cacheKey);
+        if(raw){
+          const {ts} = JSON.parse(raw);
+          if(Date.now()-ts < maxAgeMs) return; // cache fresh enough
+        }
+        await fetchFn();
+      } catch(e){}
+    };
+
+    if(open||extended){
+      // Wave 1 — highest priority: watchlist + trending (30 min cache)
+      await fetchIfStale(CK.watchlist,   ()=>fetchWatchlist(),   30*60*1000);
+      await new Promise(r=>setTimeout(r,1200));
+      await fetchIfStale(CK.trending,    ()=>fetchTrending(),    30*60*1000);
+      await new Promise(r=>setTimeout(r,1200));
+      // Wave 2 — gems + IPOs (1 hour cache, less volatile)
+      await fetchIfStale(CK.dynamicGems, ()=>fetchDynamicGems(), 60*60*1000);
+      await new Promise(r=>setTimeout(r,1200));
+      await fetchIfStale(CK.dynamicIPOs, ()=>fetchDynamicIPOs(), 60*60*1000);
+      await new Promise(r=>setTimeout(r,1200));
+      // Wave 3 — options + smart money (45 min cache)
+      await fetchIfStale(CK.dynamicOptions, ()=>fetchDynamicOptions(), 45*60*1000);
+      await new Promise(r=>setTimeout(r,1200));
+      await fetchIfStale(CK.smActivity,     ()=>fetchSmActivity(),     45*60*1000);
+    }
+    if(open){
+      await new Promise(r=>setTimeout(r,1200));
+      // Wave 4 — day trading data (15 min cache, most time-sensitive)
+      await fetchIfStale(CK.dtMomentum,  ()=>fetchMomentum(),    15*60*1000);
+      await new Promise(r=>setTimeout(r,1200));
+      await fetchIfStale(CK.dtScalps,    ()=>fetchScalps(),      15*60*1000);
+      await new Promise(r=>setTimeout(r,1200));
+      await fetchIfStale(CK.dtSqueeze,   ()=>fetchSqueeze(),     30*60*1000);
+    }
+    if(extended){
+      // Extended hours: after-hours and pre-market data
+      await fetchIfStale(CK.dtAfterHours, ()=>fetchAfterHours(), 20*60*1000);
+      await new Promise(r=>setTimeout(r,1200));
+      await fetchIfStale(CK.dtPreMarket,  ()=>fetchPreMarket(),  20*60*1000);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
+
+  // On mount: load cache instantly, then auto-fetch fresh data
+  useEffect(()=>{
+    // Step 1: Instantly restore last known data from cache
+    const load = (key, setter) => { const d=loadCache(key); if(d) setter(d); };
+    load(CK.watchlist,      setWatchlist);
+    load(CK.trending,       setTrending);
+    load(CK.smActivity,     setSmActivity);
+    load(CK.dynamicOptions, setDynamicOptions);
+    load(CK.dynamicIPOs,    setDynamicIPOs);
+    load(CK.dynamicGems,    setDynamicGems);
+    load(CK.dtMomentum,     setDtMomentum);
+    load(CK.dtScalps,       setDtScalps);
+    load(CK.dtSqueeze,      setDtSqueeze);
+    load(CK.dtAfterHours,   setDtAfterHours);
+    load(CK.dtPreMarket,    setDtPreMarket);
+
+    // Step 2: Start staggered auto-fetch after a short delay
+    const t = setTimeout(()=>autoFetchAll(), 2000);
+    return ()=>clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  // Auto-refresh every 15 minutes while market is open
+  useEffect(()=>{
+    const interval = setInterval(()=>{
+      if(isMarketOpen()||isExtendedHours()) autoFetchAll();
+    }, 15*60*1000);
+    return ()=>clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[autoFetchAll]);
+
+  // Detect market open transition: if market was closed and now opens, auto-fetch
+  const prevMarketOpen = useRef(isMarketOpen());
+  useEffect(()=>{
+    const check = setInterval(()=>{
+      const nowOpen = isMarketOpen();
+      if(!prevMarketOpen.current && nowOpen){
+        // Market just opened — fetch everything fresh
+        autoFetchAll();
+      }
+      prevMarketOpen.current = nowOpen;
+    }, 60*1000);
+    return ()=>clearInterval(check);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[autoFetchAll]);
 
   const handleUseAnalysis = useCallback(()=>{
     if(BETA_MODE||subscribed) return true;
@@ -2286,7 +2439,7 @@ export default function App(){
     setWatchlistLoading(true);
     try{
       const r = await callAI(DYNAMIC_WATCHLIST_SYSTEM,
-        `Today is ${new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}. Search for the 15 stocks with the highest profit potential RIGHT NOW. Consider today's market movements, earnings this week, analyst upgrades today, sector momentum, and unusual volume. Only include stocks trading on major US exchanges.`,
+        `Today is ${new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}. Search for the 15 highest-conviction, highest-profit-potential stocks for THIS WEEK. Include: stocks with earnings catalysts this week, sector leaders with institutional buying, technical breakouts at key levels, analyst upgrades from the past 48 hours, and unusual options activity. Only US-listed stocks. Provide precise entry, target, and stop for each.`,
         "perplexity"
       );
       setWatchlist(r); saveCache(CK.watchlist,r);
@@ -2298,7 +2451,7 @@ export default function App(){
     setTrendingLoading(true);
     try{
       const r = await callAI(TRENDING_SYSTEM,
-        `Search for the top 8 trending stocks with highest profit potential RIGHT NOW. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}. Only use REAL ticker symbols.`,
+        `Search for the top 8 stocks with the highest profit potential RIGHT NOW — not just social buzz, but real institutional momentum, unusual options flow, and near-term catalysts. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}. Provide entry, target, and stop for each. Only REAL ticker symbols.`,
         "perplexity"
       );
       setTrending(r); saveCache(CK.trending,r);
@@ -2325,7 +2478,7 @@ export default function App(){
     setSmActivityLoading(true);
     try{
       const r = await callAI(DYNAMIC_SMART_MONEY_SYSTEM,
-        `Search for the most recent congressional STOCK Act trade disclosures filed in the last 30 days and latest SEC 13F filings from major hedge funds. Only use REAL names and tickers. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
+        `Search for the most recent congressional STOCK Act disclosures from the last 45 days AND the latest SEC 13F filings from top hedge funds (Druckenmiller, Ackman, Tepper, Cohen, Dalio, ARK). Only REAL names and REAL tickers. Highlight which stocks appear in multiple filings. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
         "perplexity"
       );
       setSmActivity(r); saveCache(CK.smActivity,r);
@@ -2337,7 +2490,7 @@ export default function App(){
     setDynamicOptionsLoading(true);
     try{
       const r = await callAI(DYNAMIC_OPTIONS_SYSTEM,
-        `Search for the best options opportunities RIGHT NOW. Look for unusual options activity, stocks with earnings in 2 weeks, elevated IV, and unusual call/put sweeps. Only REAL tickers. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
+        `Search for the best options trades available RIGHT NOW. Look for: unusual call/put sweeps above $500K notional, stocks with earnings in the next 14 days, elevated IV rank above 50, and sector leaders at technical inflection points. Provide exact strike, expiry, and estimated premium. Only REAL tickers. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
         "perplexity"
       );
       setDynamicOptions(r); saveCache(CK.dynamicOptions,r);
@@ -2349,7 +2502,7 @@ export default function App(){
     setIpoLoading(true);
     try{
       const r = await callAI(DYNAMIC_IPO_SYSTEM,
-        `Search for the most current upcoming IPOs for 2025-2026. Find companies that recently filed S-1 forms or announced IPO plans. Only REAL companies. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
+        `Search for the most current IPO pipeline for 2025-2026. Include companies with filed S-1s, confirmed pricing dates, and recent roadshows. Evaluate valuation vs public comps and first-day pop potential. Only REAL companies with verifiable filings. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
         "perplexity"
       );
       setDynamicIPOs(r); saveCache(CK.dynamicIPOs,r);
@@ -2361,7 +2514,7 @@ export default function App(){
     setGemsLoading(true);
     try{
       const r = await callAI(DYNAMIC_GEMS_SYSTEM,
-        `Search for small/mid-cap stocks that are currently undervalued with significant upcoming catalysts. Look for stocks with recent analyst upgrades, insider buying, earnings beats. Only REAL tickers. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
+        `Search for small and mid-cap stocks (market cap $300M-$10B) that are currently undervalued with a near-term re-rating catalyst. Look for: recent insider buying, institutional accumulation, earnings inflection, new product launches, or regulatory approvals. Minimum 3 months of positive fundamental trend. Only REAL tickers. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
         "perplexity"
       );
       setDynamicGems(r); saveCache(CK.dynamicGems,r);
@@ -2371,31 +2524,31 @@ export default function App(){
 
   const fetchMomentum = async () => {
     setDtMomentumLoading(true);
-    try{ const r=await callAI(MOMENTUM_MOVERS_SYSTEM,`Search for stocks moving significantly RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtMomentum(r); saveCache(CK.dtMomentum,r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(MOMENTUM_MOVERS_SYSTEM,`Search for the highest-conviction intraday trading opportunities RIGHT NOW. Find liquid stocks (>2M avg volume) with real catalysts — earnings, upgrades, news, technical breakouts. Include precise entry zones, targets, and stops. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}. REAL tickers only.`,"perplexity"); setDtMomentum(r); saveCache(CK.dtMomentum,r); }catch(e){ console.error(e); }
     setDtMomentumLoading(false);
   };
 
   const fetchScalps = async () => {
     setDtScalpsLoading(true);
-    try{ const r=await callAI(SCALP_SETUPS_SYSTEM,`Find the best scalping opportunities RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtScalps(r); saveCache(CK.dtScalps,r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(SCALP_SETUPS_SYSTEM,`Find the 6 cleanest scalp setups available RIGHT NOW for liquid stocks with avg volume above 2M/day. Each must have a precise entry trigger, two targets, and a tight stop. Include setup type and urgency. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}. REAL tickers only.`,"perplexity"); setDtScalps(r); saveCache(CK.dtScalps,r); }catch(e){ console.error(e); }
     setDtScalpsLoading(false);
   };
 
   const fetchSqueeze = async () => {
     setDtSqueezeLoading(true);
-    try{ const r=await callAI(SHORT_SQUEEZE_SYSTEM,`Find high short interest stocks showing squeeze signs RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,"perplexity"); setDtSqueeze(r); saveCache(CK.dtSqueeze,r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(SHORT_SQUEEZE_SYSTEM,`Search for stocks with short float above 15%, days-to-cover above 3, and recent unusual call buying or positive catalyst that could force short covering. Rank by squeeze probability. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}. REAL tickers only.`,"perplexity"); setDtSqueeze(r); saveCache(CK.dtSqueeze,r); }catch(e){ console.error(e); }
     setDtSqueezeLoading(false);
   };
 
   const fetchAfterHours = async () => {
     setDtAfterHoursLoading(true);
-    try{ const r=await callAI(AFTERHOURS_SYSTEM,`Search for significant after-hours/pre-market stock movements happening RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtAfterHours(r); saveCache(CK.dtAfterHours,r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(AFTERHOURS_SYSTEM,`Search for significant after-hours and pre-market movers RIGHT NOW with real earnings releases, guidance, M&A, or analyst actions as catalysts. For each provide a specific next-day trading plan with entry, target, and stop. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}. REAL tickers only.`,"perplexity"); setDtAfterHours(r); saveCache(CK.dtAfterHours,r); }catch(e){ console.error(e); }
     setDtAfterHoursLoading(false);
   };
 
   const fetchPreMarket = async () => {
     setDtPreMarketLoading(true);
-    try{ const r=await callAI(PREMARKET_SYSTEM,`Search for pre-market movers and futures data with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtPreMarket(r); saveCache(CK.dtPreMarket,r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(PREMARKET_SYSTEM,`Search for pre-market movers, overnight futures, and key economic events for today. For each gap mover provide a concrete gap-and-go or gap-fill trading strategy with entry, target, and stop. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}. REAL tickers only.`,"perplexity"); setDtPreMarket(r); saveCache(CK.dtPreMarket,r); }catch(e){ console.error(e); }
     setDtPreMarketLoading(false);
   };
 
@@ -2579,35 +2732,44 @@ export default function App(){
               )}
             </div>
 
-            {/* Dynamic watchlist */}
+            {/* Watchlist */}
             <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:18}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:14}}>
                 <div>
                   <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:2,marginBottom:4}}>
-                    {watchlist?" AI Market Picks — Updated Today":" Today's Market Picks"}
+                    {watchlist?`Watchlist — ${watchlist.weekOf||"This Week"}` : "Watchlist"}
                   </div>
                   <div style={fm(MUTED,12)}>
-                    {watchlist?`${watchlist.generatedAt} • ${watchlist.marketContext}`:"AI selects the highest profit-potential stocks based on today's market conditions"}
+                    {watchlist
+                      ? `Updated ${watchlist.generatedAt} • ${watchlist.marketContext}`
+                      : "Curated weekly picks with the highest profit potential based on live market data"}
                   </div>
                 </div>
                 <button onClick={fetchWatchlist} style={{background:`${GREEN}18`,border:`1px solid ${GREEN}44`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"9px 18px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
-                  {watchlistLoading?"SCANNING...":" REFRESH WATCHLIST"}
+                  {watchlistLoading?"SCANNING...":"REFRESH"}
                 </button>
               </div>
               {watchlist&&(
-                <div style={{background:DIM,borderRadius:6,padding:"10px 14px",marginBottom:16,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{background:DIM,borderRadius:6,padding:"10px 14px",marginBottom:watchlist.editorNote?0:16,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
                   <Tag label={watchlist.marketBias||"MIXED"} color={watchlist.marketBias==="BULLISH"?GREEN:watchlist.marketBias==="BEARISH"?RED:GOLD}/>
                   <span style={fm(MUTED,12,{flex:1})}>{watchlist.marketContext}</span>
                 </div>
               )}
-              {watchlistLoading&&<LoadingAnim color={GREEN} message="SCANNING MARKET..."/>}
+              {watchlist?.editorNote&&(
+                <div style={{background:`${BLUE}08`,border:`1px solid ${BLUE}22`,borderRadius:6,padding:"8px 14px",marginBottom:16,borderLeft:`3px solid ${BLUE}`}}>
+                  <span style={fm(BLUE,11,{fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginRight:8})}>Editor's Note</span>
+                  <span style={fm("#7a9aaa",12)}>{watchlist.editorNote}</span>
+                </div>
+              )}
+              {watchlistLoading&&<LoadingAnim color={GREEN} message="SCANNING MARKET FOR TOP PICKS..."/>}
               {!watchlist&&!watchlistLoading&&(
                 <div style={{textAlign:"center",padding:"32px 0"}}>
-                  <div style={{fontSize:32,marginBottom:12}}></div>
-                  <div style={fm(WHITE,14,{fontWeight:600,marginBottom:8})}>Watchlist</div>
-                  <div style={fm(MUTED,13,{marginBottom:20,maxWidth:400,margin:"0 auto 20px"})}>Click "Refresh Watchlist" to get today's AI-selected stocks with the highest profit potential based on live market data</div>
+                  <div style={fm(WHITE,14,{fontWeight:600,marginBottom:8})}>Curated Weekly Picks</div>
+                  <div style={fm(MUTED,13,{marginBottom:20,maxWidth:400,margin:"0 auto 20px"})}>
+                    Each week, the platform selects the 15 highest-conviction stocks based on earnings catalysts, institutional buying, technical setups, and analyst activity.
+                  </div>
                   <button onClick={fetchWatchlist} style={{background:`linear-gradient(135deg,${GREEN}22,${GREEN}11)`,border:`1px solid ${GREEN}55`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"12px 24px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
-                     Load Today's Top Picks
+                    Load This Week's Picks
                   </button>
                 </div>
               )}
