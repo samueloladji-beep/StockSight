@@ -29,16 +29,16 @@ const CONFIDENCE_MAP = {
 };
 
 const RISK_CONFIG = {
-  CONSERVATIVE:{ color:GREEN,  icon:"🛡️", desc:"Lower risk, defined max loss" },
-  MODERATE:    { color:GOLD,   icon:"⚖️", desc:"Balanced risk/reward"         },
-  AGGRESSIVE:  { color:RED,    icon:"🔥", desc:"High risk, experienced only"  },
+  CONSERVATIVE:{ color:GREEN,  icon:"[S]", desc:"Lower risk, defined max loss" },
+  MODERATE:    { color:GOLD,   icon:"[M]", desc:"Balanced risk/reward"         },
+  AGGRESSIVE:  { color:RED,    icon:"[A]", desc:"High risk, experienced only"  },
 };
 
 const BIAS_CONFIG = {
-  BULLISH: {color:GREEN,  icon:"🐂"},
-  BEARISH: {color:RED,    icon:"🐻"},
-  NEUTRAL: {color:BLUE,   icon:"➡️"},
-  VOLATILE:{color:ORANGE, icon:"⚡"},
+  BULLISH: {color:GREEN,  icon:""},
+  BEARISH: {color:RED,    icon:""},
+  NEUTRAL: {color:BLUE,   icon:""},
+  VOLATILE:{color:ORANGE, icon:""},
 };
 
 const SMART_MONEY_TRADERS = [
@@ -122,19 +122,7 @@ const SMART_MONEY_TRADERS = [
     avatar: "BA",
     avatarColor: ORANGE,
   },
-  {
-    id: "burry_protege",
-    name: "Cathie Wood",
-    role: "ARK Invest",
-    category: "FUND MANAGER",
-    categoryColor: PURPLE,
-    track: "ARK Public Daily Holdings",
-    knownFor: "Publishes daily portfolio changes publicly. Known for high-conviction disruptive tech bets — TSLA (early), COIN, ROKU, CRISPR. ARK Innovation ETF (ARKK) 5-year returns are publicly tracked.",
-    historicalReturn: "+346% in 2020; volatile since",
-    dataSource: "ARK Invest Daily Holdings (public)",
-    avatar: "CW",
-    avatarColor: PURPLE,
-  },
+
   {
     id: "druckenmiller",
     name: "Stan Druckenmiller",
@@ -311,7 +299,26 @@ const STOCK_SYSTEM = `You are a professional stock analyst with real-time market
   "dataSources": ["source1","source2"]
 }`;
 
-const GEM_SYSTEM = `You are a small/mid-cap specialist. Search for the latest data on this hidden gem stock. Return ONLY valid JSON (no markdown) using same schema as stock analysis.`;
+const GEM_SYSTEM = `You are a small/mid-cap specialist. Search for the latest data on this hidden gem stock. Return ONLY valid JSON (no markdown, no backticks):
+{
+  "ticker": "XXXX",
+  "name": "Company Name",
+  "verdict": "STRONG BUY"|"BUY"|"SPECULATIVE"|"HOLD"|"SELL"|"STRONG SELL",
+  "confidence": 0-100,
+  "price": "$XXX.XX",
+  "priceTarget": "$XXX",
+  "analystConsensus": "Buy/Hold/Sell",
+  "upside": "+XX%",
+  "eps": "Latest EPS vs estimate",
+  "revenue": "Latest revenue vs estimate",
+  "nextEarnings": "Month DD YYYY",
+  "peRatio": "XX.X",
+  "catalysts": ["catalyst 1","catalyst 2","catalyst 3"],
+  "risks": ["risk 1","risk 2"],
+  "recentNews": ["news 1","news 2","news 3"],
+  "whyThisRating": "3-4 sentence explanation of why this is a hidden gem worth investing in",
+  "dataSources": ["source1","source2"]
+}`;
 
 const IPO_SYSTEM = `You are an IPO analyst. Search for the latest data on this upcoming IPO. Return ONLY valid JSON:
 {
@@ -877,7 +884,7 @@ function InfoBox({label,value,color=WHITE}){
 function WhyBox({text}){
   return (
     <div style={{background:`${BLUE}08`,border:`1px solid ${BLUE}33`,borderRadius:6,padding:"12px 14px",borderLeft:`3px solid ${BLUE}`}}>
-      <SectionLabel color={BLUE} icon="💡">Why This Rating</SectionLabel>
+      <SectionLabel color={BLUE} icon="">Why This Rating</SectionLabel>
       <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#b0c4de",lineHeight:1.8}}>{text}</p>
     </div>
   );
@@ -904,7 +911,7 @@ function DisclaimerBanner({onViewTerms,onViewPrivacy}){
   return(
     <div style={{background:"#0a0e16",borderBottom:`1px solid ${GOLD}44`,padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,position:"sticky",top:0,zIndex:500}}>
       <div style={{display:"flex",alignItems:"center",gap:10,flex:1}}>
-        <span style={{fontSize:14}}>⚠️</span>
+        <span style={{fontSize:14}}></span>
         <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:GOLD,lineHeight:1.5}}>
           <strong>Financial Disclaimer:</strong> StockMoolah provides AI-generated analysis for informational purposes only. This is NOT financial advice. You may lose money. Always consult a licensed financial advisor before investing.
         </span>
@@ -924,7 +931,7 @@ function TermsModal({onClose}){
       <div style={{background:"#0d1117",border:`1px solid ${BORDER}`,borderRadius:12,maxWidth:700,width:"100%",maxHeight:"85vh",overflow:"auto",padding:32}} onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
           <h2 style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:WHITE,letterSpacing:2}}>Terms of Service</h2>
-          <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,borderRadius:6,padding:"4px 12px",cursor:"pointer",fontSize:16}}>✕</button>
+          <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,borderRadius:6,padding:"4px 12px",cursor:"pointer",fontSize:16}}></button>
         </div>
         <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#b0bec5",lineHeight:1.9}}>
           <p style={{marginBottom:12,color:MUTED,fontSize:11}}>Last updated: March 2026</p>
@@ -943,7 +950,7 @@ function TermsModal({onClose}){
             </div>
           ))}
           <p style={{marginTop:24,padding:"12px 16px",background:"#0a0e16",borderRadius:6,border:`1px solid ${GOLD}33`,color:GOLD,fontSize:12}}>
-            ⚠️ BY USING STOCKMOOLAH, YOU AGREE TO THESE TERMS AND ACKNOWLEDGE YOU ARE SOLELY RESPONSIBLE FOR YOUR INVESTMENT DECISIONS.
+             BY USING STOCKMOOLAH, YOU AGREE TO THESE TERMS AND ACKNOWLEDGE YOU ARE SOLELY RESPONSIBLE FOR YOUR INVESTMENT DECISIONS.
           </p>
         </div>
       </div>
@@ -957,7 +964,7 @@ function PrivacyModal({onClose}){
       <div style={{background:"#0d1117",border:`1px solid ${BORDER}`,borderRadius:12,maxWidth:700,width:"100%",maxHeight:"85vh",overflow:"auto",padding:32}} onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
           <h2 style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:WHITE,letterSpacing:2}}>Privacy Policy</h2>
-          <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,borderRadius:6,padding:"4px 12px",cursor:"pointer",fontSize:16}}>✕</button>
+          <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,borderRadius:6,padding:"4px 12px",cursor:"pointer",fontSize:16}}></button>
         </div>
         <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#b0bec5",lineHeight:1.9}}>
           <p style={{marginBottom:12,color:MUTED,fontSize:11}}>Last updated: March 2026</p>
@@ -992,7 +999,7 @@ function Paywall({onClose,onSubscribe}){
         <div style={{background:DIM,borderRadius:8,padding:"16px 20px",marginBottom:24,textAlign:"left"}}>
           {["Unlimited Stock Analyses (live data)","Smart Money Tracker — Congress + Hedge Funds","Options Trading — 3 AI Setups Per Stock","Day Trading Terminal — Movers, Scalps, Squeezes","Data-Backed WHY THIS RATING Explanations","Hidden Gems — Breakout Stocks","IPO Watch with % Buy Confidence","Stock Screener & Portfolio Tracker"].map(f=>(
             <div key={f} style={{display:"flex",gap:10,alignItems:"center",marginBottom:8}}>
-              <span style={{color:GREEN,fontSize:14}}>✓</span>
+              <span style={{color:GREEN,fontSize:14}}></span>
               <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:WHITE}}>{f}</span>
             </div>
           ))}
@@ -1040,21 +1047,21 @@ function StockResult({result}){
       {/* Catalysts */}
       {result.catalysts?.length>0&&(
         <div style={{background:DIM,borderRadius:6,padding:"10px 14px",borderLeft:`2px solid ${GREEN}`}}>
-          <SectionLabel color={GREEN} icon="🚀">Catalysts</SectionLabel>
+          <SectionLabel color={GREEN} icon="">Catalysts</SectionLabel>
           {result.catalysts.map((c,i)=><div key={i} style={fm("#8ab0cc",13,{marginBottom:4,lineHeight:1.6})}>• {c}</div>)}
         </div>
       )}
       {/* Risks */}
       {result.risks?.length>0&&(
         <div style={{background:DIM,borderRadius:6,padding:"10px 14px",borderLeft:`2px solid ${RED}`}}>
-          <SectionLabel color={RED} icon="⚠️">Risks</SectionLabel>
+          <SectionLabel color={RED} icon="">Risks</SectionLabel>
           {result.risks.map((r,i)=><div key={i} style={fm("#cc9090",13,{marginBottom:4,lineHeight:1.6})}>• {r}</div>)}
         </div>
       )}
       {/* News */}
       {result.recentNews?.length>0&&(
         <div style={{background:DIM,borderRadius:6,padding:"10px 14px",borderLeft:`2px solid ${MUTED}`}}>
-          <SectionLabel color={MUTED} icon="📰">Recent News</SectionLabel>
+          <SectionLabel color={MUTED} icon="">Recent News</SectionLabel>
           {result.recentNews.map((n,i)=><div key={i} style={fm(MUTED,12,{marginBottom:4,lineHeight:1.6})}>• {n}</div>)}
         </div>
       )}
@@ -1127,7 +1134,7 @@ function DynStockCard({stock, subscribed, onPaywall, onUseAnalysis, analysesUsed
           {stock.confidence&&<Tag label={`${stock.confidence}% CONF`} color={c.color}/>}
         </div>
         <button onClick={analyze} disabled={state==="loading"} style={{width:"100%",background:state==="loading"?`${c.color}11`:`linear-gradient(135deg,${c.color}22,${c.color}11)`,border:`1px solid ${c.color}55`,color:state==="done"?MUTED:c.color,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,padding:"10px 0",borderRadius:6,cursor:state==="loading"?"wait":"pointer",textTransform:"uppercase",transition:"all 0.2s"}}>
-          {state==="loading"?"⏳ ANALYZING...":(state==="done"?"✓ ANALYSIS COMPLETE":"▶ ANALYZE WITH LIVE DATA")}
+          {state==="loading"?"⏳ ANALYZING...":(state==="done"?" ANALYSIS COMPLETE":" ANALYZE WITH LIVE DATA")}
         </button>
       </div>
       {/* Analysis result */}
@@ -1191,7 +1198,7 @@ function GemCard({gem, subscribed, onPaywall}){
           </div>
         )}
         <button onClick={run} disabled={state==="loading"} style={{width:"100%",background:state==="loading"?`${PURPLE}11`:`linear-gradient(135deg,${PURPLE}22,${PURPLE}11)`,border:`1px solid ${PURPLE}55`,color:state==="done"?MUTED:PURPLE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"10px 0",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
-          {state==="loading"?"⏳ ANALYZING...":(state==="done"?"✓ COMPLETE":"▶ DEEP DIVE ANALYSIS")}
+          {state==="loading"?"⏳ ANALYZING...":(state==="done"?" COMPLETE":" DEEP DIVE ANALYSIS")}
         </button>
       </div>
       {state==="done"&&result&&<div style={{padding:"14px 16px"}}><StockResult result={result}/></div>}
@@ -1228,7 +1235,7 @@ function IPOCard({ipo, subscribed, onPaywall}){
         </div>
         <p style={fm(MUTED,13,{lineHeight:1.7,marginBottom:10})}>{ipo.description}</p>
         <button onClick={run} disabled={state==="loading"} style={{width:"100%",background:state==="loading"?`${CYAN}11`:`linear-gradient(135deg,${CYAN}22,${CYAN}11)`,border:`1px solid ${CYAN}55`,color:state==="done"?MUTED:CYAN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"10px 0",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
-          {state==="loading"?"⏳ ANALYZING...":(state==="done"?"✓ COMPLETE":"▶ ANALYZE IPO")}
+          {state==="loading"?"⏳ ANALYZING...":(state==="done"?" COMPLETE":" ANALYZE IPO")}
         </button>
       </div>
       {state==="done"&&result&&(
@@ -1320,12 +1327,12 @@ function SmartMoneyTraderCard({trader, subscribed, onPaywall}){
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           {!BETA_MODE&&!subscribed?(
             <div style={{textAlign:"center"}}>
-              <div style={{fontSize:18}}>🔒</div>
+              <div style={{fontSize:18}}></div>
               <div style={fm(GOLD,9,{letterSpacing:1,textTransform:"uppercase"})}>PRO ONLY</div>
             </div>
           ):(
             <button style={{background:`${catColor}18`,border:`1px solid ${catColor}44`,color:catColor,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"6px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
-              {expanded?"▲ HIDE":"▼ TRACK TRADES"}
+              {expanded?" HIDE":" TRACK TRADES"}
             </button>
           )}
         </div>
@@ -1334,7 +1341,7 @@ function SmartMoneyTraderCard({trader, subscribed, onPaywall}){
       <div style={{padding:"0 16px 14px"}}>
         <div style={fm(MUTED,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:4,fontWeight:700})}>Known For</div>
         <p style={fm("#8a9aaa",13,{lineHeight:1.7})}>{trader.knownFor}</p>
-        <div style={fm(MUTED,11,{marginTop:6})}>📊 Source: {trader.dataSource}</div>
+        <div style={fm(MUTED,11,{marginTop:6})}> Source: {trader.dataSource}</div>
       </div>
       {/* Expanded content */}
       {expanded&&(
@@ -1433,19 +1440,19 @@ function OptionsTab({subscribed, onPaywall, dynamicOptions, dynamicOptionsLoadin
     <div>
       {/* Header */}
       <div style={{marginBottom:20}}>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:ORANGE,letterSpacing:3,textShadow:`0 0 20px ${ORANGE}44`,marginBottom:6}}>Options Trading 📊</div>
-        <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:640})}>AI-powered options trade suggestions based on live earnings dates, IV, technicals, and market catalysts. 3 setups per stock — conservative to aggressive.</p>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:ORANGE,letterSpacing:3,textShadow:`0 0 20px ${ORANGE}44`,marginBottom:6}}>Options Trading</div>
+        <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:640})}>Options trade suggestions based on live earnings dates, IV, technicals, and market catalysts. 3 setups per stock — conservative to aggressive.</p>
       </div>
 
       {/* Hot Options Opportunities */}
       <div style={{background:CARD,border:`1px solid ${ORANGE}33`,borderRadius:10,padding:18,marginBottom:22}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:14}}>
           <div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:ORANGE,letterSpacing:2,marginBottom:3}}>🔥 Hot Options Right Now</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:ORANGE,letterSpacing:2,marginBottom:3}}> Hot Options Right Now</div>
             <div style={fm(MUTED,12)}>AI-detected unusual options activity, high-profit setups, and upcoming earnings plays</div>
           </div>
           <button onClick={onFetchDynamic} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"8px 16px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
-            {dynamicOptionsLoading?"SCANNING...":"🔄 SCAN MARKET"}
+            {dynamicOptionsLoading?"SCANNING...":" SCAN MARKET"}
           </button>
         </div>
         {dynamicOptionsLoading&&<LoadingAnim color={ORANGE} message="SCANNING FOR UNUSUAL OPTIONS ACTIVITY..."/>}
@@ -1463,7 +1470,7 @@ function OptionsTab({subscribed, onPaywall, dynamicOptions, dynamicOptionsLoadin
             </div>
             {dynamicOptions.unusualActivityAlerts?.length>0&&(
               <div style={{marginBottom:16}}>
-                <SectionLabel color={RED} icon="⚡">Unusual Activity Alerts</SectionLabel>
+                <SectionLabel color={RED} icon="">Unusual Activity Alerts</SectionLabel>
                 {dynamicOptions.unusualActivityAlerts.map((alert,i)=>(
                   <div key={i} style={{background:DIM,borderRadius:5,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,borderLeft:`2px solid ${alert.bullish?GREEN:RED}`,marginBottom:6}}>
                     <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -1488,7 +1495,7 @@ function OptionsTab({subscribed, onPaywall, dynamicOptions, dynamicOptionsLoadin
                           <div>
                             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
                               <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:WHITE,letterSpacing:2}}>{opp.ticker}</span>
-                              {opp.unusualActivity&&<Tag label="🔥 UOA" color={RED}/>}
+                              {opp.unusualActivity&&<Tag label=" UOA" color={RED}/>}
                             </div>
                             <div style={fm(MUTED,12,{marginBottom:4})}>{opp.name}</div>
                             <Tag label={`${opp.type} • ${opp.strategy}`} color={opp.type==="CALL"?GREEN:opp.type==="PUT"?RED:GOLD}/>
@@ -1520,13 +1527,13 @@ function OptionsTab({subscribed, onPaywall, dynamicOptions, dynamicOptionsLoadin
 
       {/* Custom options search */}
       <div style={{background:CARD,border:`1px solid ${ORANGE}33`,borderRadius:10,padding:18,marginBottom:22}}>
-        <SectionLabel color={ORANGE} icon="🔍">Analyze Any Stock Options</SectionLabel>
+        <SectionLabel color={ORANGE} icon="">Analyze Any Stock Options</SectionLabel>
         <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginBottom:8}}>
           <input placeholder="Enter any ticker (e.g. HOOD, SOFI, RBLX...)" value={customTicker} onChange={e=>setCustomTicker(e.target.value.toUpperCase())} onKeyDown={e=>e.key==="Enter"&&analyzeCustom()} style={{background:DIM,border:`1px solid ${ORANGE}55`,color:WHITE,fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,padding:"10px 14px",borderRadius:5,width:280,outline:"none"}}/>
           <button onClick={analyzeCustom} disabled={customLoading||!customTicker.trim()} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"11px 20px",borderRadius:5,cursor:"pointer",textTransform:"uppercase",opacity:customTicker.trim()?1:0.5}}>
-            {customLoading?"ANALYZING...":"▶ GET OPTIONS"}
+            {customLoading?"ANALYZING...":" GET OPTIONS"}
           </button>
-          {customResult&&<button onClick={()=>setCustomResult(null)} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:11,padding:"10px 14px",borderRadius:5,cursor:"pointer"}}>✕ Clear</button>}
+          {customResult&&<button onClick={()=>setCustomResult(null)} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:11,padding:"10px 14px",borderRadius:5,cursor:"pointer"}}> Clear</button>}
         </div>
         <div style={fm(MUTED,11)}>Get 3 AI-generated options setups for any US-listed stock</div>
         {customResult&&(
@@ -1553,7 +1560,7 @@ function OptionsTab({subscribed, onPaywall, dynamicOptions, dynamicOptionsLoadin
             <Tag label={selectedStock.sector} color={MUTED}/>
           </div>
           <button onClick={analyze} disabled={state==="loading"} style={{background:`linear-gradient(135deg,${ORANGE}22,${ORANGE}11)`,border:`1px solid ${ORANGE}55`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"11px 22px",borderRadius:6,cursor:"pointer",textTransform:"uppercase",letterSpacing:0.5}}>
-            {state==="loading"?"⏳ ANALYZING...":"▶ GENERATE OPTIONS SETUPS"}
+            {state==="loading"?"⏳ ANALYZING...":" GENERATE OPTIONS SETUPS"}
           </button>
         </div>
         {state==="loading"&&<LoadingAnim color={ORANGE} message="ANALYZING OPTIONS CHAIN..."/>}
@@ -1608,8 +1615,8 @@ function Screener({subscribed, onPaywall}){
 
   return(
     <div>
-      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:BLUE,letterSpacing:3,textShadow:`0 0 20px ${BLUE}44`,marginBottom:6}}>Stock Screener 🔭</div>
-      <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600,marginBottom:20})}>AI scans multiple stocks simultaneously and filters by your criteria.</p>
+      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:BLUE,letterSpacing:3,textShadow:`0 0 20px ${BLUE}44`,marginBottom:6}}>Stock Screener</div>
+      <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600,marginBottom:20})}>Scans multiple stocks simultaneously and filters by your criteria.</p>
       <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:18,marginBottom:20}}>
         <SectionLabel color={MUTED}>Filter Settings</SectionLabel>
         <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:14}}>
@@ -1624,7 +1631,7 @@ function Screener({subscribed, onPaywall}){
             </select>
           </div>
           <button onClick={run} disabled={running} style={{background:`linear-gradient(135deg,${BLUE}22,${BLUE}11)`,border:`1px solid ${BLUE}55`,color:BLUE,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"10px 22px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
-            {running?"⏳ SCANNING...":"▶ RUN SCREENER"}
+            {running?"⏳ SCANNING...":" RUN SCREENER"}
           </button>
         </div>
         {running&&<LoadingAnim color={BLUE} message="SCANNING STOCKS..."/>}
@@ -1686,8 +1693,8 @@ function Portfolio({subscribed, onPaywall}){
 
   return(
     <div>
-      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:GREEN,letterSpacing:3,textShadow:`0 0 20px ${GREEN}44`,marginBottom:6}}>Portfolio Tracker 📈</div>
-      <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600,marginBottom:20})}>Track your holdings and get AI analysis on each position.</p>
+      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:GREEN,letterSpacing:3,textShadow:`0 0 20px ${GREEN}44`,marginBottom:6}}>Portfolio Tracker</div>
+      <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600,marginBottom:20})}>Track your holdings and get analysis on each position.</p>
       {/* Add holding */}
       <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:18,marginBottom:20}}>
         <SectionLabel color={GREEN}>Add Holding</SectionLabel>
@@ -1696,7 +1703,7 @@ function Portfolio({subscribed, onPaywall}){
           <input placeholder="Shares" value={newShares} onChange={e=>setNewShares(e.target.value)} type="number" style={{background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:5,width:100,outline:"none"}}/>
           <input placeholder="Avg Cost $" value={newCost} onChange={e=>setNewCost(e.target.value)} type="number" style={{background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:5,width:110,outline:"none"}}/>
           <button onClick={addHolding} style={{background:`${GREEN}18`,border:`1px solid ${GREEN}44`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"9px 16px",borderRadius:5,cursor:"pointer"}}>+ Add</button>
-          <button onClick={analyzeAll} style={{background:`linear-gradient(135deg,${GREEN}22,${GREEN}11)`,border:`1px solid ${GREEN}55`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"9px 18px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>▶ Analyze All</button>
+          <button onClick={analyzeAll} style={{background:`linear-gradient(135deg,${GREEN}22,${GREEN}11)`,border:`1px solid ${GREEN}55`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"9px 18px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}> Analyze All</button>
         </div>
       </div>
       {/* Holdings list */}
@@ -1714,7 +1721,7 @@ function Portfolio({subscribed, onPaywall}){
                 </div>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
                   {r&&<Tag label={r.verdict} color={c.color}/>}
-                  <button onClick={()=>setHoldings(p=>p.filter(x=>x.ticker!==h.ticker))} style={{background:"none",border:"none",color:MUTED,cursor:"pointer",fontSize:14}}>✕</button>
+                  <button onClick={()=>setHoldings(p=>p.filter(x=>x.ticker!==h.ticker))} style={{background:"none",border:"none",color:MUTED,cursor:"pointer",fontSize:14}}></button>
                 </div>
               </div>
               <LiveMiniChart ticker={h.ticker} color={c?c.color:GREEN}/>
@@ -1743,13 +1750,13 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
       <div style={{background:`${RED}08`,border:`1px solid ${RED}33`,borderRadius:10,padding:"16px 20px",marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
           <div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,color:RED,letterSpacing:3,textShadow:`0 0 20px ${RED}44`,marginBottom:4}}>⚡ Day Trading Terminal</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,color:RED,letterSpacing:3,textShadow:`0 0 20px ${RED}44`,marginBottom:4}}> Day Trading Terminal</div>
             <p style={fm(MUTED,13,{lineHeight:1.6})}>Real-time momentum movers, scalp setups, after-hours plays, and short squeeze alerts — updated live by AI</p>
           </div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <button onClick={onFetchAfterHours} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"8px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtAfterHoursLoading?"...":"🌙 After-Hours"}</button>
-            <button onClick={onFetchPreMarket} style={{background:`${GOLD}18`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"8px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtPreMarketLoading?"...":"🌅 Pre-Market"}</button>
-            <button onClick={onFetchMomentum} style={{background:`${RED}18`,border:`1px solid ${RED}44`,color:RED,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"8px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtMomentumLoading?"SCANNING...":"🔥 Scan Movers"}</button>
+            <button onClick={onFetchAfterHours} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"8px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtAfterHoursLoading?"...":" After-Hours"}</button>
+            <button onClick={onFetchPreMarket} style={{background:`${GOLD}18`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"8px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtPreMarketLoading?"...":" Pre-Market"}</button>
+            <button onClick={onFetchMomentum} style={{background:`${RED}18`,border:`1px solid ${RED}44`,color:RED,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"8px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtMomentumLoading?"SCANNING...":" Scan Movers"}</button>
           </div>
         </div>
       </div>
@@ -1758,10 +1765,10 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
       <div style={{background:CARD,border:`1px solid ${ORANGE}33`,borderRadius:10,padding:18,marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
           <div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:ORANGE,letterSpacing:2,marginBottom:3}}>🌙 After-Hours & Pre-Market Movers</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:ORANGE,letterSpacing:2,marginBottom:3}}> After-Hours & Pre-Market Movers</div>
             <div style={fm(MUTED,12)}>Stocks moving in extended hours — earnings releases, breaking news, analyst actions</div>
           </div>
-          <button onClick={onFetchAfterHours} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtAfterHoursLoading?"FETCHING...":"🔄 REFRESH"}</button>
+          <button onClick={onFetchAfterHours} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtAfterHoursLoading?"FETCHING...":" REFRESH"}</button>
         </div>
         {dtAfterHoursLoading&&<LoadingAnim color={ORANGE} message="SCANNING AFTER-HOURS ACTIVITY..."/>}
         {!dtAfterHours&&!dtAfterHoursLoading&&<div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "After-Hours" or "Refresh" to see extended hours movers</div>}
@@ -1773,7 +1780,7 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
             </div>
             {dtAfterHours.earningsTonight?.length>0&&(
               <div style={{marginBottom:14}}>
-                <SectionLabel color={GOLD} icon="📅">Earnings Tonight</SectionLabel>
+                <SectionLabel color={GOLD} icon="">Earnings Tonight</SectionLabel>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                   {dtAfterHours.earningsTonight.map((e,i)=>(
                     <div key={i} style={{background:DIM,borderRadius:5,padding:"8px 12px",border:`1px solid ${GOLD}33`}}>
@@ -1824,7 +1831,7 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
             </div>
             {dtAfterHours.tomorrowWatchlist?.length>0&&(
               <div style={{marginTop:14,background:DIM,borderRadius:6,padding:"10px 14px",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                <span style={fm(WHITE,12,{fontWeight:700})}>👀 Watch Tomorrow:</span>
+                <span style={fm(WHITE,12,{fontWeight:700})}> Watch Tomorrow:</span>
                 {dtAfterHours.tomorrowWatchlist.map((t,i)=>(
                   <div key={i} style={{background:`${GREEN}18`,border:`1px solid ${GREEN}33`,borderRadius:4,padding:"3px 10px",fontFamily:"'Bebas Neue',cursive",fontSize:14,color:GREEN,letterSpacing:1}}>{t}</div>
                 ))}
@@ -1838,10 +1845,10 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
       <div style={{background:CARD,border:`1px solid ${GOLD}33`,borderRadius:10,padding:18,marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
           <div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:GOLD,letterSpacing:2,marginBottom:3}}>🌅 Pre-Market Report</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:GOLD,letterSpacing:2,marginBottom:3}}> Pre-Market Report</div>
             <div style={fm(MUTED,12)}>Futures, overnight gaps, and today's day trading setup</div>
           </div>
-          <button onClick={onFetchPreMarket} style={{background:`${GOLD}18`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtPreMarketLoading?"LOADING...":"🔄 REFRESH"}</button>
+          <button onClick={onFetchPreMarket} style={{background:`${GOLD}18`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtPreMarketLoading?"LOADING...":" REFRESH"}</button>
         </div>
         {dtPreMarketLoading&&<LoadingAnim color={GOLD} message="LOADING PRE-MARKET DATA..."/>}
         {!dtPreMarket&&!dtPreMarketLoading&&<div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "Pre-Market" or "Refresh" to see today's pre-market setup</div>}
@@ -1908,10 +1915,10 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
       <div style={{background:CARD,border:`1px solid ${RED}33`,borderRadius:10,padding:18,marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
           <div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:RED,letterSpacing:2,marginBottom:3}}>🔥 Momentum Movers</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:RED,letterSpacing:2,marginBottom:3}}> Momentum Movers</div>
             <div style={fm(MUTED,12)}>Stocks with the strongest price momentum and catalysts right now</div>
           </div>
-          <button onClick={onFetchMomentum} style={{background:`${RED}18`,border:`1px solid ${RED}44`,color:RED,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtMomentumLoading?"SCANNING...":"🔄 REFRESH"}</button>
+          <button onClick={onFetchMomentum} style={{background:`${RED}18`,border:`1px solid ${RED}44`,color:RED,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtMomentumLoading?"SCANNING...":" REFRESH"}</button>
         </div>
         {dtMomentumLoading&&<LoadingAnim color={RED} message="SCANNING MARKET FOR MOMENTUM..."/>}
         {!dtMomentum&&!dtMomentumLoading&&<div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "Scan Movers" to find stocks with strongest momentum right now</div>}
@@ -1981,10 +1988,10 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
       <div style={{background:CARD,border:`1px solid ${CYAN}33`,borderRadius:10,padding:18,marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
           <div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:CYAN,letterSpacing:2,marginBottom:3}}>🎯 Scalp Setups</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:CYAN,letterSpacing:2,marginBottom:3}}> Scalp Setups</div>
             <div style={fm(MUTED,12)}>Quick 1–5% intraday setups with precise entry, target, and stop loss</div>
           </div>
-          <button onClick={onFetchScalps} style={{background:`${CYAN}18`,border:`1px solid ${CYAN}44`,color:CYAN,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtScalpsLoading?"SCANNING...":"🔄 REFRESH"}</button>
+          <button onClick={onFetchScalps} style={{background:`${CYAN}18`,border:`1px solid ${CYAN}44`,color:CYAN,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtScalpsLoading?"SCANNING...":" REFRESH"}</button>
         </div>
         {dtScalpsLoading&&<LoadingAnim color={CYAN} message="FINDING SCALP SETUPS..."/>}
         {!dtScalps&&!dtScalpsLoading&&<div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "Refresh" to find today's best scalp setups</div>}
@@ -2023,7 +2030,7 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
                       <Tag label={`R:R ${s.riskReward}`} color={MUTED}/>
                       <Tag label={`${s.confidence}%`} color={urgColor}/>
                     </div>
-                    {s.notes&&<div style={{fontSize:11,color:"#5a7a8a",fontFamily:"'DM Sans',sans-serif",lineHeight:1.5}}>⚠️ {s.notes}</div>}
+                    {s.notes&&<div style={{fontSize:11,color:"#5a7a8a",fontFamily:"'DM Sans',sans-serif",lineHeight:1.5}}> {s.notes}</div>}
                   </div>
                 );
               })}
@@ -2036,10 +2043,10 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
       <div style={{background:CARD,border:`1px solid ${PINK}33`,borderRadius:10,padding:18,marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
           <div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:PINK,letterSpacing:2,marginBottom:3}}>🩳 Short Squeeze Watch</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:PINK,letterSpacing:2,marginBottom:3}}> Short Squeeze Watch</div>
             <div style={fm(MUTED,12)}>High short interest stocks with squeeze potential</div>
           </div>
-          <button onClick={onFetchSqueeze} style={{background:`${PINK}18`,border:`1px solid ${PINK}44`,color:PINK,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtSqueezeLoading?"SCANNING...":"🔄 REFRESH"}</button>
+          <button onClick={onFetchSqueeze} style={{background:`${PINK}18`,border:`1px solid ${PINK}44`,color:PINK,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"7px 14px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{dtSqueezeLoading?"SCANNING...":" REFRESH"}</button>
         </div>
         {dtSqueezeLoading&&<LoadingAnim color={PINK} message="SCANNING SHORT INTEREST DATA..."/>}
         {!dtSqueeze&&!dtSqueezeLoading&&<div style={{textAlign:"center",padding:"14px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12}}>Click "Refresh" to find current short squeeze candidates</div>}
@@ -2047,7 +2054,7 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
           <div>
             {dtSqueeze.activeSqueezes?.length>0&&(
               <div style={{background:`${RED}08`,border:`1px solid ${RED}33`,borderRadius:6,padding:"10px 14px",marginBottom:14,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-                <span style={fm(RED,12,{fontWeight:700})}>🔥 ACTIVE SQUEEZES:</span>
+                <span style={fm(RED,12,{fontWeight:700})}> ACTIVE SQUEEZES:</span>
                 {dtSqueeze.activeSqueezes.map((t,i)=><div key={i} style={{background:`${RED}18`,border:`1px solid ${RED}33`,borderRadius:4,padding:"3px 10px",fontFamily:"'Bebas Neue',cursive",fontSize:14,color:RED,letterSpacing:1}}>{t}</div>)}
               </div>
             )}
@@ -2087,7 +2094,7 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
                       ))}
                     </div>
                     <Tag label={`${c.confidence}% CONF`} color={stageColor}/>
-                    {c.risk&&<div style={{marginTop:6,fontSize:11,color:"#5a6a7a",fontFamily:"'DM Sans',sans-serif",lineHeight:1.5}}>⚠️ {c.risk}</div>}
+                    {c.risk&&<div style={{marginTop:6,fontSize:11,color:"#5a6a7a",fontFamily:"'DM Sans',sans-serif",lineHeight:1.5}}> {c.risk}</div>}
                   </div>
                 );
               })}
@@ -2099,7 +2106,7 @@ function DayTradingTab({subscribed,onPaywall,dtMomentum,dtMomentumLoading,onFetc
       {/* Risk warning */}
       <div style={{background:`${RED}08`,border:`1px solid ${RED}22`,borderRadius:6,padding:"12px 16px"}}>
         <p style={fm(MUTED,11,{lineHeight:1.7})}>
-          ⚠️ <strong style={{color:RED}}>Day Trading Risk Warning:</strong> Day trading involves substantial risk of loss and is not appropriate for all investors. Most day traders lose money. The setups above are AI-generated for informational purposes only and do NOT constitute financial advice. Never risk more than you can afford to lose. Always use stop losses.
+           <strong style={{color:RED}}>Day Trading Risk Warning:</strong> Day trading involves substantial risk of loss and is not appropriate for all investors. Most day traders lose money. The setups above are AI-generated for informational purposes only and do NOT constitute financial advice. Never risk more than you can afford to lose. Always use stop losses.
         </p>
       </div>
     </div>
@@ -2169,6 +2176,33 @@ export default function App(){
     if(p.get("subscribed")==="true"){ setSubscribed(true); setShowToast(true); setTimeout(()=>setShowToast(false),4500); }
   },[]);
 
+  // ── Persistent session cache ─────────────────────────────────────────────
+  const CK = {
+    watchlist:"sm_watchlist", trending:"sm_trending", smActivity:"sm_sm",
+    dynamicOptions:"sm_opts", dynamicIPOs:"sm_ipos", dynamicGems:"sm_gems",
+    dtMomentum:"sm_mom", dtScalps:"sm_scalps", dtSqueeze:"sm_squeeze",
+    dtAfterHours:"sm_ah", dtPreMarket:"sm_pm",
+  };
+  const saveCache = (key,data)=>{ try{ sessionStorage.setItem(key,JSON.stringify({data,ts:Date.now()})); }catch(e){} };
+  const loadCache = (key)=>{ try{ const r=sessionStorage.getItem(key); if(!r) return null; const {data,ts}=JSON.parse(r); return (Date.now()-ts<8*3600*1000)?data:null; }catch(e){ return null; } };
+
+  // Load cached data on mount so sections always show last known data
+  useEffect(()=>{
+    const load = (key, setter) => { const d=loadCache(key); if(d) setter(d); };
+    load(CK.watchlist, setWatchlist);
+    load(CK.trending, setTrending);
+    load(CK.smActivity, setSmActivity);
+    load(CK.dynamicOptions, setDynamicOptions);
+    load(CK.dynamicIPOs, setDynamicIPOs);
+    load(CK.dynamicGems, setDynamicGems);
+    load(CK.dtMomentum, setDtMomentum);
+    load(CK.dtScalps, setDtScalps);
+    load(CK.dtSqueeze, setDtSqueeze);
+    load(CK.dtAfterHours, setDtAfterHours);
+    load(CK.dtPreMarket, setDtPreMarket);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
   const handleUseAnalysis = useCallback(()=>{
     if(BETA_MODE||subscribed) return true;
     if(analysesUsed>=FREE_LIMIT){ setShowPaywall(true); return false; }
@@ -2202,23 +2236,33 @@ export default function App(){
       const results = await Promise.allSettled(
         SYMBOLS.map(async (sym) => {
           const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=2d`;
-          const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-          const res = await fetch(proxy);
-          const data = await res.json();
-          const result = data?.chart?.result?.[0];
-          if(!result) return null;
-          const meta = result.meta;
-          const price = meta.regularMarketPrice;
-          const prev = meta.previousClose || meta.chartPreviousClose;
-          const change = price - prev;
-          const changePct = ((change / prev) * 100).toFixed(2);
-          return {
-            ticker: labels[sym] || sym.replace("-USD",""),
-            price: price > 1000 ? price.toFixed(0) : price > 10 ? price.toFixed(2) : price.toFixed(4),
-            change: (change >= 0 ? "+" : "") + change.toFixed(2),
-            changePct: (changePct >= 0 ? "+" : "") + changePct + "%",
-            isUp: change >= 0,
-          };
+          const proxies = [
+            `https://corsproxy.io/?${encodeURIComponent(url)}`,
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+          ];
+          for(const proxy of proxies){
+            try{
+              const res = await fetch(proxy);
+              if(!res.ok) continue;
+              const data = await res.json();
+              const result = data?.chart?.result?.[0];
+              if(!result) continue;
+              const meta = result.meta;
+              const price = meta.regularMarketPrice ?? meta.previousClose;
+              const prev = meta.previousClose ?? meta.chartPreviousClose;
+              if(!price || !prev) continue;
+              const change = price - prev;
+              const changePct = ((change / prev) * 100).toFixed(2);
+              return {
+                ticker: labels[sym] || sym.replace("-USD",""),
+                price: price > 10000 ? price.toFixed(0) : price > 1 ? price.toFixed(2) : price.toFixed(4),
+                change: (change >= 0 ? "+" : "") + change.toFixed(2),
+                changePct: (change >= 0 ? "+" : "") + changePct + "%",
+                isUp: change >= 0,
+              };
+            }catch(e){ continue; }
+          }
+          return null;
         })
       );
       const valid = results.filter(r=>r.status==="fulfilled"&&r.value).map(r=>r.value);
@@ -2245,7 +2289,7 @@ export default function App(){
         `Today is ${new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}. Search for the 15 stocks with the highest profit potential RIGHT NOW. Consider today's market movements, earnings this week, analyst upgrades today, sector momentum, and unusual volume. Only include stocks trading on major US exchanges.`,
         "perplexity"
       );
-      setWatchlist(r);
+      setWatchlist(r); saveCache(CK.watchlist,r);
     }catch(e){ console.error("Watchlist fetch failed:",e); }
     setWatchlistLoading(false);
   };
@@ -2257,7 +2301,7 @@ export default function App(){
         `Search for the top 8 trending stocks with highest profit potential RIGHT NOW. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}. Only use REAL ticker symbols.`,
         "perplexity"
       );
-      setTrending(r);
+      setTrending(r); saveCache(CK.trending,r);
     }catch(e){ console.error("Trending fetch failed:",e); }
     setTrendingLoading(false);
   };
@@ -2284,7 +2328,7 @@ export default function App(){
         `Search for the most recent congressional STOCK Act trade disclosures filed in the last 30 days and latest SEC 13F filings from major hedge funds. Only use REAL names and tickers. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
         "perplexity"
       );
-      setSmActivity(r);
+      setSmActivity(r); saveCache(CK.smActivity,r);
     }catch(e){ console.error("SM activity failed:",e); }
     setSmActivityLoading(false);
   };
@@ -2296,7 +2340,7 @@ export default function App(){
         `Search for the best options opportunities RIGHT NOW. Look for unusual options activity, stocks with earnings in 2 weeks, elevated IV, and unusual call/put sweeps. Only REAL tickers. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,
         "perplexity"
       );
-      setDynamicOptions(r);
+      setDynamicOptions(r); saveCache(CK.dynamicOptions,r);
     }catch(e){ console.error("Dynamic options failed:",e); }
     setDynamicOptionsLoading(false);
   };
@@ -2308,7 +2352,7 @@ export default function App(){
         `Search for the most current upcoming IPOs for 2025-2026. Find companies that recently filed S-1 forms or announced IPO plans. Only REAL companies. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
         "perplexity"
       );
-      setDynamicIPOs(r);
+      setDynamicIPOs(r); saveCache(CK.dynamicIPOs,r);
     }catch(e){ console.error("Dynamic IPOs failed:",e); }
     setIpoLoading(false);
   };
@@ -2320,38 +2364,38 @@ export default function App(){
         `Search for small/mid-cap stocks that are currently undervalued with significant upcoming catalysts. Look for stocks with recent analyst upgrades, insider buying, earnings beats. Only REAL tickers. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,
         "perplexity"
       );
-      setDynamicGems(r);
+      setDynamicGems(r); saveCache(CK.dynamicGems,r);
     }catch(e){ console.error("Dynamic gems failed:",e); }
     setGemsLoading(false);
   };
 
   const fetchMomentum = async () => {
     setDtMomentumLoading(true);
-    try{ const r=await callAI(MOMENTUM_MOVERS_SYSTEM,`Search for stocks moving significantly RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtMomentum(r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(MOMENTUM_MOVERS_SYSTEM,`Search for stocks moving significantly RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtMomentum(r); saveCache(CK.dtMomentum,r); }catch(e){ console.error(e); }
     setDtMomentumLoading(false);
   };
 
   const fetchScalps = async () => {
     setDtScalpsLoading(true);
-    try{ const r=await callAI(SCALP_SETUPS_SYSTEM,`Find the best scalping opportunities RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtScalps(r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(SCALP_SETUPS_SYSTEM,`Find the best scalping opportunities RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtScalps(r); saveCache(CK.dtScalps,r); }catch(e){ console.error(e); }
     setDtScalpsLoading(false);
   };
 
   const fetchSqueeze = async () => {
     setDtSqueezeLoading(true);
-    try{ const r=await callAI(SHORT_SQUEEZE_SYSTEM,`Find high short interest stocks showing squeeze signs RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,"perplexity"); setDtSqueeze(r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(SHORT_SQUEEZE_SYSTEM,`Find high short interest stocks showing squeeze signs RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`,"perplexity"); setDtSqueeze(r); saveCache(CK.dtSqueeze,r); }catch(e){ console.error(e); }
     setDtSqueezeLoading(false);
   };
 
   const fetchAfterHours = async () => {
     setDtAfterHoursLoading(true);
-    try{ const r=await callAI(AFTERHOURS_SYSTEM,`Search for significant after-hours/pre-market stock movements happening RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtAfterHours(r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(AFTERHOURS_SYSTEM,`Search for significant after-hours/pre-market stock movements happening RIGHT NOW with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtAfterHours(r); saveCache(CK.dtAfterHours,r); }catch(e){ console.error(e); }
     setDtAfterHoursLoading(false);
   };
 
   const fetchPreMarket = async () => {
     setDtPreMarketLoading(true);
-    try{ const r=await callAI(PREMARKET_SYSTEM,`Search for pre-market movers and futures data with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtPreMarket(r); }catch(e){ console.error(e); }
+    try{ const r=await callAI(PREMARKET_SYSTEM,`Search for pre-market movers and futures data with REAL tickers only. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"})}.`,"perplexity"); setDtPreMarket(r); saveCache(CK.dtPreMarket,r); }catch(e){ console.error(e); }
     setDtPreMarketLoading(false);
   };
 
@@ -2359,9 +2403,9 @@ export default function App(){
 
   const TABS = [
     {id:"watchlist",  label:"Watchlist"},
-    {id:"daytrading", label:"Day Trading ⚡"},
-    {id:"smartmoney", label:"Smart Money 🕵️"},
-    {id:"options",    label:"Options 📊"},
+    {id:"daytrading", label:"Day Trading"},
+    {id:"smartmoney", label:"Smart Money"},
+    {id:"options",    label:"Options"},
     {id:"screener",   label:"Screener"},
     {id:"gems",       label:"Hidden Gems"},
     {id:"ipos",       label:"IPO Watch"},
@@ -2385,36 +2429,37 @@ export default function App(){
         select option{background:${CARD};}
         @keyframes barAnim{from{transform:scaleY(0.4)}to{transform:scaleY(1)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-        @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+        @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-33.333%)}}
       `}</style>
 
       {/* Header */}
       <div style={{background:CARD,borderBottom:`1px solid ${BORDER}`,position:"sticky",top:DisclaimerBanner?"auto":0,zIndex:400}}>
         {/* Live Ticker tape */}
-        <div style={{background:"#050810",borderBottom:`1px solid ${BORDER}`,padding:"5px 0",overflow:"hidden",whiteSpace:"nowrap",position:"relative"}}>
-          {/* Fade edges */}
+        <div style={{background:"#050810",borderBottom:`1px solid ${BORDER}`,height:28,overflow:"hidden",position:"relative"}}>
           <div style={{position:"absolute",left:0,top:0,bottom:0,width:60,background:"linear-gradient(to right,#050810,transparent)",zIndex:2,pointerEvents:"none"}}/>
           <div style={{position:"absolute",right:0,top:0,bottom:0,width:60,background:"linear-gradient(to left,#050810,transparent)",zIndex:2,pointerEvents:"none"}}/>
-          <div style={{display:"inline-flex",gap:0,animation:`tickerScroll ${tickerLoaded?90:60}s linear infinite`}}>
-            {(tickerLoaded?[...tickerData,...tickerData]:[
-              {ticker:"S&P 500",price:"--",changePct:"+--",isUp:true},
-              {ticker:"NASDAQ",price:"--",changePct:"+--",isUp:true},
-              {ticker:"DOW",price:"--",changePct:"+--",isUp:true},
-              {ticker:"VIX",price:"--",changePct:"--",isUp:false},
-              {ticker:"NVDA",price:"--",changePct:"+--",isUp:true},
-              {ticker:"AAPL",price:"--",changePct:"+--",isUp:true},
-              {ticker:"TSLA",price:"--",changePct:"--",isUp:false},
-              {ticker:"BTC",price:"--",changePct:"+--",isUp:true},
-            ]).map((item,i)=>(
-              <div key={i} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"0 20px",borderRight:`1px solid ${BORDER}33`}}>
-                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,color:WHITE,letterSpacing:0.5}}>{item.ticker}</span>
-                <span style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#7a8a9a"}}>{item.price}</span>
-                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,color:item.isUp?GREEN:RED,display:"flex",alignItems:"center",gap:2}}>
-                  <span style={{fontSize:8}}>{item.isUp?"▲":"▼"}</span>
-                  {item.changePct}
-                </span>
-              </div>
-            ))}
+          <div style={{position:"absolute",top:0,left:0,display:"flex",alignItems:"center",height:"100%",animation:`tickerScroll ${tickerLoaded?120:80}s linear infinite`,willChange:"transform"}}>
+            {(()=>{
+              const baseItems = tickerLoaded ? tickerData : [
+                {ticker:"S&P 500",price:"--",changePct:"--",isUp:true},
+                {ticker:"NASDAQ",price:"--",changePct:"--",isUp:true},
+                {ticker:"DOW",price:"--",changePct:"--",isUp:true},
+                {ticker:"VIX",price:"--",changePct:"--",isUp:false},
+                {ticker:"NVDA",price:"--",changePct:"--",isUp:true},
+                {ticker:"AAPL",price:"--",changePct:"--",isUp:true},
+                {ticker:"TSLA",price:"--",changePct:"--",isUp:false},
+                {ticker:"BTC",price:"--",changePct:"--",isUp:true},
+              ];
+              return [...baseItems,...baseItems,...baseItems].map((item,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"0 24px",borderRight:`1px solid ${BORDER}44`,flexShrink:0,height:"100%"}}>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,color:WHITE,letterSpacing:0.5,whiteSpace:"nowrap"}}>{item.ticker}</span>
+                  <span style={{fontFamily:"'Space Mono',monospace",fontSize:10,color:"#7a8a9a",whiteSpace:"nowrap"}}>{item.price}</span>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,color:item.isUp?GREEN:RED,whiteSpace:"nowrap"}}>
+                    {item.isUp?"+":""}{item.changePct}
+                  </span>
+                </div>
+              ));
+            })()}
           </div>
           {!tickerLoaded&&(
             <div style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",fontFamily:"'DM Sans',sans-serif",fontSize:9,color:MUTED,letterSpacing:1}}>LOADING LIVE DATA...</div>
@@ -2457,13 +2502,13 @@ export default function App(){
 
             {/* Custom ticker search */}
             <div style={{background:CARD,border:`1px solid ${GREEN}33`,borderRadius:10,padding:18,marginBottom:20}}>
-              <SectionLabel color={GREEN} icon="🔍">Analyze Any Stock — Type Any Ticker or Company Name</SectionLabel>
+              <SectionLabel color={GREEN} icon="">Analyze Any Stock — Type Any Ticker or Company Name</SectionLabel>
               <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginBottom:8}}>
                 <input placeholder="Enter ticker or company name (e.g. TSLA, Apple, Nvidia...)" value={customTicker} onChange={e=>setCustomTicker(e.target.value)} onKeyDown={e=>e.key==="Enter"&&analyzeCustomTicker()} style={{background:DIM,border:`1px solid ${GREEN}55`,color:WHITE,fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,padding:"10px 14px",borderRadius:5,width:340,outline:"none"}}/>
                 <button onClick={analyzeCustomTicker} disabled={customLoading||!customTicker.trim()} style={{background:`${GREEN}18`,border:`1px solid ${GREEN}55`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"11px 20px",borderRadius:5,cursor:"pointer",textTransform:"uppercase",opacity:customTicker.trim()?1:0.5}}>
-                  {customLoading?"ANALYZING...":"▶ ANALYZE"}
+                  {customLoading?"ANALYZING...":" ANALYZE"}
                 </button>
-                {customStock&&<button onClick={()=>setCustomStock(null)} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:11,padding:"10px 14px",borderRadius:5,cursor:"pointer"}}>✕ Clear</button>}
+                {customStock&&<button onClick={()=>setCustomStock(null)} style={{background:"none",border:`1px solid ${BORDER}`,color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:11,padding:"10px 14px",borderRadius:5,cursor:"pointer"}}> Clear</button>}
               </div>
               <div style={fm(MUTED,11)}>Works with ticker symbols (AAPL) or company names (Apple) — press Enter or click Analyze</div>
               {customStock&&(
@@ -2478,10 +2523,10 @@ export default function App(){
             <div style={{background:CARD,border:`1px solid ${ORANGE}33`,borderRadius:10,padding:18,marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:14}}>
                 <div>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:ORANGE,letterSpacing:3,textShadow:`0 0 16px ${ORANGE}44`}}>🔥 Trending Now</div>
-                  <div style={fm(MUTED,12)}>AI-detected stocks with market buzz + high profit potential</div>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:ORANGE,letterSpacing:3,textShadow:`0 0 16px ${ORANGE}44`}}> Trending Now</div>
+                  <div style={fm(MUTED,12)}>Stocks with market buzz and high profit potential</div>
                 </div>
-                <button onClick={fetchTrending} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"8px 16px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{trendingLoading?"SCANNING...":"▶ REFRESH TRENDING"}</button>
+                <button onClick={fetchTrending} style={{background:`${ORANGE}18`,border:`1px solid ${ORANGE}44`,color:ORANGE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"8px 16px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{trendingLoading?"SCANNING...":" REFRESH TRENDING"}</button>
               </div>
               {trendingLoading&&<LoadingAnim color={ORANGE} message="SCANNING MARKET FOR HOT STOCKS..."/>}
               {!trending&&!trendingLoading&&<div style={{textAlign:"center",padding:"16px 0",color:MUTED,fontSize:12}}>Click "Refresh Trending" to see today's hottest high-potential stocks</div>}
@@ -2496,7 +2541,7 @@ export default function App(){
                   </div>
                   {trending.topPickToday&&(
                     <div style={{background:`${GREEN}0a`,border:`1px solid ${GREEN}44`,borderRadius:6,padding:"12px 14px",marginBottom:14,borderLeft:`3px solid ${GREEN}`}}>
-                      <div style={fm(GREEN,11,{letterSpacing:1,textTransform:"uppercase",marginBottom:4,fontWeight:700})}>⭐ TOP PICK TODAY: {trending.topPickToday}</div>
+                      <div style={fm(GREEN,11,{letterSpacing:1,textTransform:"uppercase",marginBottom:4,fontWeight:700})}> TOP PICK TODAY: {trending.topPickToday}</div>
                       <p style={fm("#7a9a7a",12,{lineHeight:1.7})}>{trending.topPickReason}</p>
                     </div>
                   )}
@@ -2539,14 +2584,14 @@ export default function App(){
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:14}}>
                 <div>
                   <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:2,marginBottom:4}}>
-                    {watchlist?"🤖 AI Market Picks — Updated Today":"📋 Today's Market Picks"}
+                    {watchlist?" AI Market Picks — Updated Today":" Today's Market Picks"}
                   </div>
                   <div style={fm(MUTED,12)}>
                     {watchlist?`${watchlist.generatedAt} • ${watchlist.marketContext}`:"AI selects the highest profit-potential stocks based on today's market conditions"}
                   </div>
                 </div>
                 <button onClick={fetchWatchlist} style={{background:`${GREEN}18`,border:`1px solid ${GREEN}44`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"9px 18px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
-                  {watchlistLoading?"AI SCANNING...":"🔄 REFRESH WATCHLIST"}
+                  {watchlistLoading?"SCANNING...":" REFRESH WATCHLIST"}
                 </button>
               </div>
               {watchlist&&(
@@ -2555,14 +2600,14 @@ export default function App(){
                   <span style={fm(MUTED,12,{flex:1})}>{watchlist.marketContext}</span>
                 </div>
               )}
-              {watchlistLoading&&<LoadingAnim color={GREEN} message="AI SCANNING MARKET FOR TOP OPPORTUNITIES..."/>}
+              {watchlistLoading&&<LoadingAnim color={GREEN} message="SCANNING MARKET..."/>}
               {!watchlist&&!watchlistLoading&&(
                 <div style={{textAlign:"center",padding:"32px 0"}}>
-                  <div style={{fontSize:32,marginBottom:12}}>🤖</div>
-                  <div style={fm(WHITE,14,{fontWeight:600,marginBottom:8})}>Dynamic AI Watchlist</div>
+                  <div style={{fontSize:32,marginBottom:12}}></div>
+                  <div style={fm(WHITE,14,{fontWeight:600,marginBottom:8})}>Watchlist</div>
                   <div style={fm(MUTED,13,{marginBottom:20,maxWidth:400,margin:"0 auto 20px"})}>Click "Refresh Watchlist" to get today's AI-selected stocks with the highest profit potential based on live market data</div>
                   <button onClick={fetchWatchlist} style={{background:`linear-gradient(135deg,${GREEN}22,${GREEN}11)`,border:`1px solid ${GREEN}55`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"12px 24px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
-                    🔄 Load Today's Top Picks
+                     Load Today's Top Picks
                   </button>
                 </div>
               )}
@@ -2591,20 +2636,20 @@ export default function App(){
         {/* ── SMART MONEY TAB ───────────────────────────────────── */}
         {tab==="smartmoney"&&(
           <div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:PINK,letterSpacing:3,textShadow:`0 0 20px ${PINK}44`,marginBottom:6}}>Smart Money Tracker 🕵️</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:PINK,letterSpacing:3,textShadow:`0 0 20px ${PINK}44`,marginBottom:6}}>Smart Money Tracker</div>
             <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:660,marginBottom:20})}>Track publicly disclosed trades of elite investors — congressional members (STOCK Act filings), hedge fund whales (SEC 13F reports).</p>
             {/* Legal note */}
             <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:8,padding:"12px 16px",marginBottom:20}}>
-              <p style={fm(MUTED,12,{lineHeight:1.7})}>📋 All data is sourced from legally mandated public disclosures. Congressional trades are disclosed via the STOCK Act (2012). Hedge fund positions come from SEC 13F quarterly filings. Copy-trading based on this data is legal. Note: Congress disclosures can lag up to 45 days; 13F filings lag up to 45 days after quarter end.</p>
+              <p style={fm(MUTED,12,{lineHeight:1.7})}> All data is sourced from legally mandated public disclosures. Congressional trades are disclosed via the STOCK Act (2012). Hedge fund positions come from SEC 13F quarterly filings. Copy-trading based on this data is legal. Note: Congress disclosures can lag up to 45 days; 13F filings lag up to 45 days after quarter end.</p>
             </div>
             {/* Live activity section */}
             <div style={{background:CARD,border:`1px solid ${GOLD}33`,borderRadius:10,padding:18,marginBottom:24}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:14}}>
                 <div>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:GOLD,letterSpacing:2,marginBottom:3}}>⚡ Live Activity Feed</div>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:GOLD,letterSpacing:2,marginBottom:3}}> Live Activity Feed</div>
                   <div style={fm(MUTED,12)}>Most recent congressional trades & hedge fund moves</div>
                 </div>
-                <button onClick={fetchSmActivity} style={{background:`${GOLD}18`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"8px 16px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{smActivityLoading?"FETCHING...":"🔄 REFRESH ACTIVITY"}</button>
+                <button onClick={fetchSmActivity} style={{background:`${GOLD}18`,border:`1px solid ${GOLD}44`,color:GOLD,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"8px 16px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>{smActivityLoading?"FETCHING...":" REFRESH ACTIVITY"}</button>
               </div>
               {smActivityLoading&&<LoadingAnim color={GOLD} message="SCANNING LATEST DISCLOSURES..."/>}
               {!smActivity&&!smActivityLoading&&<div style={{textAlign:"center",padding:"12px 0",color:MUTED,fontSize:12}}>Click "Refresh Activity" to see the latest smart money moves</div>}
@@ -2671,12 +2716,12 @@ export default function App(){
           <div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:18}}>
               <div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:PURPLE,letterSpacing:3,textShadow:`0 0 20px ${PURPLE}44`,marginBottom:4}}>Hidden Gems 💎</div>
-                <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600})}>AI-curated underfollowed stocks with high breakout potential</p>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:PURPLE,letterSpacing:3,textShadow:`0 0 20px ${PURPLE}44`,marginBottom:4}}>Hidden Gems</div>
+                <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600})}>Curated underfollowed stocks with high breakout potential</p>
               </div>
-              <button onClick={fetchDynamicGems} style={{background:`${PURPLE}18`,border:`1px solid ${PURPLE}44`,color:PURPLE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"9px 18px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>{gemsLoading?"🔍 SCANNING...":"🔄 REFRESH GEMS"}</button>
+              <button onClick={fetchDynamicGems} style={{background:`${PURPLE}18`,border:`1px solid ${PURPLE}44`,color:PURPLE,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"9px 18px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>{gemsLoading?" SCANNING...":" REFRESH GEMS"}</button>
             </div>
-            {gemsLoading&&<LoadingAnim color={PURPLE} message="AI SCANNING FOR HIDDEN OPPORTUNITIES..."/>}
+            {gemsLoading&&<LoadingAnim color={PURPLE} message="SCANNING FOR OPPORTUNITIES..."/>}
             {dynamicGems&&!gemsLoading&&(
               <div style={{background:`${PURPLE}08`,border:`1px solid ${PURPLE}22`,borderRadius:8,padding:"12px 16px",marginBottom:18,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
                 <div style={fm(MUTED,12,{flex:1})}>{dynamicGems.marketContext}</div>
@@ -2685,7 +2730,7 @@ export default function App(){
             )}
             {dynamicGems&&!gemsLoading&&(
               <div style={{marginBottom:24}}>
-                <SectionLabel color={PURPLE} icon="🤖">AI-Detected Opportunities ({dynamicGems.gems?.length} found)</SectionLabel>
+                <SectionLabel color={PURPLE} icon="">AI-Detected Opportunities ({dynamicGems.gems?.length} found)</SectionLabel>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
                   {dynamicGems.gems?.map((gem,i)=>(
                     <GemCard key={i} gem={gem} subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>
@@ -2694,7 +2739,7 @@ export default function App(){
               </div>
             )}
             <div>
-              {dynamicGems&&<SectionLabel color={MUTED}>📋 Standard Hidden Gems</SectionLabel>}
+              {dynamicGems&&<SectionLabel color={MUTED}> Standard Hidden Gems</SectionLabel>}
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
                 {HIDDEN_GEMS.map(gem=><GemCard key={gem.ticker} gem={gem} subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>)}
               </div>
@@ -2707,10 +2752,10 @@ export default function App(){
           <div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:18}}>
               <div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:CYAN,letterSpacing:3,textShadow:`0 0 20px ${CYAN}44`,marginBottom:4}}>IPO Watch 🚀</div>
-                <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600})}>Real-time upcoming IPOs with AI profit analysis — updated as new filings emerge</p>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:CYAN,letterSpacing:3,textShadow:`0 0 20px ${CYAN}44`,marginBottom:4}}>IPO Watch</div>
+                <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600})}>Real-time upcoming IPOs with profit analysis — updated as new filings emerge</p>
               </div>
-              <button onClick={fetchDynamicIPOs} style={{background:`${CYAN}18`,border:`1px solid ${CYAN}44`,color:CYAN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"9px 18px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>{ipoLoading?"🔍 SCANNING...":"🔄 REFRESH IPO LIST"}</button>
+              <button onClick={fetchDynamicIPOs} style={{background:`${CYAN}18`,border:`1px solid ${CYAN}44`,color:CYAN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"9px 18px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>{ipoLoading?" SCANNING...":" REFRESH IPO LIST"}</button>
             </div>
             <Legend/>
             <div style={{height:16}}/>
@@ -2723,7 +2768,7 @@ export default function App(){
             )}
             {dynamicIPOs&&!ipoLoading&&(
               <div style={{marginBottom:28}}>
-                <SectionLabel color={CYAN} icon="🤖">Latest IPO Intelligence ({dynamicIPOs.ipos?.length} found)</SectionLabel>
+                <SectionLabel color={CYAN} icon="">Latest IPO Intelligence ({dynamicIPOs.ipos?.length} found)</SectionLabel>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
                   {dynamicIPOs.ipos?.map((ipo,i)=>{
                     const c=CONFIDENCE_MAP[ipo.verdict||"SPECULATIVE"]||CONFIDENCE_MAP["SPECULATIVE"];
@@ -2750,7 +2795,7 @@ export default function App(){
                           </div>
                         )}
                         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                          <Tag label={`📅 ${ipo.estTiming}`} color={MUTED}/>
+                          <Tag label={` ${ipo.estTiming}`} color={MUTED}/>
                           {ipo.valuation&&<Tag label={ipo.valuation} color={GOLD}/>}
                           <Tag label={ipo.profitPotential||"MEDIUM"} color={ipo.profitPotential==="HIGH"?GREEN:GOLD}/>
                         </div>
@@ -2762,7 +2807,7 @@ export default function App(){
               </div>
             )}
             <div>
-              {dynamicIPOs&&<SectionLabel color={MUTED}>📋 Previously Tracked IPOs</SectionLabel>}
+              {dynamicIPOs&&<SectionLabel color={MUTED}> Previously Tracked IPOs</SectionLabel>}
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
                 {UPCOMING_IPOS.map(ipo=><IPOCard key={ipo.name} ipo={ipo} subscribed={subscribed} onPaywall={()=>setShowPaywall(true)}/>)}
               </div>
@@ -2793,7 +2838,7 @@ export default function App(){
       {/* Toast */}
       {showToast&&(
         <div style={{position:"fixed",bottom:24,right:24,background:GREEN,color:"#000",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"12px 20px",borderRadius:6,zIndex:300,boxShadow:`0 0 20px ${GREEN}44`}}>
-          ✅ PRO UNLOCKED — All features active
+           PRO UNLOCKED — All features active
         </div>
       )}
     </div>
