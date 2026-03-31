@@ -378,6 +378,29 @@ const SMART_MONEY_SYSTEM = `You are a financial intelligence analyst. Search for
   "dataSource": "Source name"
 }`;
 
+
+// ── SCREENER SYSTEM PROMPT ────────────────────────────────────────────────────
+const SCREENER_SYSTEM = `You are a quantitative analyst running a stock screen. Analyze the following stock against the user's criteria and return a concise verdict. Return ONLY valid JSON (no markdown):
+{
+  "ticker": "XXXX",
+  "name": "Full Company Name",
+  "sector": "Sector",
+  "verdict": "STRONG BUY"|"BUY"|"SPECULATIVE"|"HOLD"|"SELL"|"STRONG SELL",
+  "confidence": 0-100,
+  "price": "$XXX.XX",
+  "priceTarget": "$XXX",
+  "upside": "+XX%",
+  "peRatio": "XX.X",
+  "revenueGrowth": "+XX% YoY",
+  "earningsGrowth": "+XX% YoY",
+  "analystConsensus": "Buy/Hold/Sell",
+  "momentum": "STRONG"|"MODERATE"|"WEAK"|"NEGATIVE",
+  "technicalRating": "BULLISH"|"NEUTRAL"|"BEARISH",
+  "catalysts": ["catalyst 1","catalyst 2"],
+  "whyThisRating": "2-3 sentence explanation",
+  "passesScreen": true
+}`;
+
 const DYNAMIC_WATCHLIST_SYSTEM = `You are a senior portfolio manager at a top-tier hedge fund with real-time market access. Your job is to curate the highest-conviction, highest-profit-potential stock picks for this week. Search for current market data. Prioritize: stocks with strong earnings momentum, sector leaders with institutional buying, upcoming catalysts (earnings, FDA decisions, product launches, analyst upgrades), and technically strong setups at key breakout levels. Eliminate any stock that is speculative without a clear near-term catalyst. Return ONLY valid JSON (no markdown):
 {
   "generatedAt": "Month DD YYYY HH:MM ET",
@@ -1649,72 +1672,275 @@ function OptionsTab({subscribed, onPaywall, dynamicOptions, dynamicOptionsLoadin
 }
 
 // ─── SCREENER ─────────────────────────────────────────────────────────────────
+// ── SCREENER UNIVERSE: 120 stocks across 12 sectors ──────────────────────────
+const SCREENER_UNIVERSE = {
+  "Semiconductors":  ["NVDA","AMD","INTC","QCOM","AVGO","MU","AMAT","LRCX","KLAC","MRVL","ON","TXN","ADI","MPWR"],
+  "Mega Cap Tech":   ["AAPL","MSFT","GOOGL","META","AMZN","TSLA","NFLX","ORCL","IBM","ADBE"],
+  "Cloud / SaaS":    ["SNOW","DDOG","NET","CRM","NOW","WDAY","ZS","CRWD","PANW","S","MDB","GTLB"],
+  "Fintech":         ["COIN","HOOD","SOFI","SQ","PYPL","AFRM","UPST","NU","LC","DAVE"],
+  "Healthcare":      ["LLY","NVO","MRNA","BNTX","ABBV","JNJ","PFE","AMGN","GILD","VRTX","REGN","ISRG"],
+  "Energy":          ["XOM","CVX","COP","OXY","SLB","HAL","VLO","PSX","DVN","EOG"],
+  "Consumer":        ["AMZN","WMT","COST","TGT","HD","LOW","SBUX","MCD","NKE","LULU"],
+  "Defense":         ["RTX","LMT","NOC","GD","HII","LDOS","BAH","CACI","AXON","KTOS"],
+  "EV / Transport":  ["TSLA","RIVN","LCID","NIO","LI","XPEV","UBER","LYFT","RBLX","DASH"],
+  "Biotech":         ["SMMT","RXRX","ARWR","BEAM","EDIT","CRSP","NTLA","AGEN","IMVT","KYMR"],
+  "Small / Mid Cap": ["IONQ","RKLB","TMDX","DUOL","AXON","CELH","SOUN","LUNR","ACHR","JOBY"],
+  "ETFs / Index":    ["SPY","QQQ","IWM","XLK","XLF","XLE","XLV","ARKK","SOXL","TQQQ"],
+};
+
 function Screener({subscribed, onPaywall}){
-  const [filters,setFilters]=useState({minConf:70,verdict:"All"});
-  const [running,setRunning]=useState(false);
-  const [results,setResults]=useState([]);
-  const POOL=["NVDA","MSFT","AAPL","TSLA","META","AMZN","GOOGL","AMD","PLTR","COIN","HOOD","SOFI","RBLX","SNOW","NET","DDOG","CRWD","PANW","UBER","LYFT"];
+  const [filters, setFilters] = useState({
+    minConf: 70,
+    verdict: "All",
+    sector: "All",
+    momentum: "All",
+    minUpside: 0,
+    maxResults: 20,
+  });
+  const [running, setRunning] = useState(false);
+  const [results, setResults] = useState([]);
+  const [scanned, setScanned] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [expandedTicker, setExpandedTicker] = useState(null);
+  const [customTickers, setCustomTickers] = useState("");
+  const [activePreset, setActivePreset] = useState(null);
+
+  const PRESETS = {
+    "Strong Buys":    { minConf:80, verdict:"STRONG BUY",   sector:"All", momentum:"All",    minUpside:15 },
+    "Breakouts":      { minConf:70, verdict:"All",           sector:"All", momentum:"STRONG", minUpside:10 },
+    "Value Plays":    { minConf:65, verdict:"BUY",           sector:"All", momentum:"All",    minUpside:20 },
+    "Tech Leaders":   { minConf:75, verdict:"All",           sector:"Mega Cap Tech", momentum:"All", minUpside:0 },
+    "Small Cap Gems": { minConf:70, verdict:"All",           sector:"Small / Mid Cap", momentum:"All", minUpside:25 },
+  };
+
+  const applyPreset = (name) => {
+    setActivePreset(name);
+    setFilters(f=>({...f,...PRESETS[name]}));
+  };
+
+  const getPool = () => {
+    if(customTickers.trim()){
+      return customTickers.toUpperCase().split(/[,\s]+/).filter(t=>t.length>0);
+    }
+    if(filters.sector==="All"){
+      return Object.values(SCREENER_UNIVERSE).flat();
+    }
+    return SCREENER_UNIVERSE[filters.sector]||[];
+  };
 
   const run = async () => {
     if(!BETA_MODE&&!subscribed){ onPaywall(); return; }
-    setRunning(true); setResults([]);
-    const out=[];
-    for(const t of POOL.slice(0,8)){
+    const pool = getPool();
+    setRunning(true); setResults([]); setScanned(0); setTotal(pool.length);
+    const out = [];
+    for(const t of pool){
+      if(out.length >= filters.maxResults) break;
       try{
-        const r=await callAI(STOCK_SYSTEM,`Quick analysis of ${t}. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`);
-        if(r.confidence>=filters.minConf&&(filters.verdict==="All"||r.verdict===filters.verdict)){
-          out.push({ticker:t,result:r});
-          setResults([...out]);
+        const r = await callAI(SCREENER_SYSTEM,
+          `Screen this stock: ${t}. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}. Required filters: confidence>=${filters.minConf}%, verdict="${filters.verdict==="All"?"any":filters.verdict}", momentum="${filters.momentum==="All"?"any":filters.momentum}", upside>=${filters.minUpside}%. If stock does not meet ALL criteria set passesScreen to false. Be precise with real current data.`
+        );
+        setScanned(s=>s+1);
+        if(r.passesScreen!==false &&
+           r.confidence>=filters.minConf &&
+           (filters.verdict==="All"||r.verdict===filters.verdict) &&
+           (filters.momentum==="All"||r.momentum===filters.momentum)){
+          const upside = parseFloat((r.upside||"0").replace(/[^0-9.-]/g,""))||0;
+          if(upside>=filters.minUpside){
+            out.push({ticker:t, result:r});
+            setResults([...out]);
+          }
         }
-      }catch{}
+      }catch(e){ setScanned(s=>s+1); }
     }
     setRunning(false);
   };
 
+  const sectors = ["All",...Object.keys(SCREENER_UNIVERSE)];
+
   return(
     <div>
-      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:BLUE,letterSpacing:3,textShadow:`0 0 20px ${BLUE}44`,marginBottom:6}}>Stock Screener</div>
-      <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600,marginBottom:20})}>Scans multiple stocks simultaneously and filters by your criteria.</p>
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:18,marginBottom:20}}>
+      {/* Header */}
+      <div style={{marginBottom:20}}>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:BLUE,letterSpacing:3,textShadow:`0 0 20px ${BLUE}44`,marginBottom:4}}>Stock Screener</div>
+        <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:640})}>Scan 120+ stocks across 12 sectors with custom filters. Set your criteria and the screener returns only the stocks that match — with full analysis on each.</p>
+      </div>
+
+      {/* Presets */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+        <SectionLabel color={MUTED}>Quick Presets</SectionLabel>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {Object.keys(PRESETS).map(name=>(
+            <button key={name} onClick={()=>applyPreset(name)}
+              style={{background:activePreset===name?`${BLUE}22`:DIM, border:`1px solid ${activePreset===name?BLUE+"55":BORDER}`,
+                color:activePreset===name?BLUE:MUTED, fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+                padding:"7px 16px",borderRadius:5,cursor:"pointer",transition:"all 0.15s"}}>
+              {name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:18,marginBottom:16}}>
         <SectionLabel color={MUTED}>Filter Settings</SectionLabel>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:14}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:16,marginBottom:16}}>
+
           <div>
-            <div style={fm(MUTED,11,{marginBottom:4})}>Min Confidence: {filters.minConf}%</div>
-            <input type="range" min="0" max="100" value={filters.minConf} onChange={e=>setFilters(p=>({...p,minConf:+e.target.value}))} style={{width:160,accentColor:BLUE}}/>
+            <div style={fm(MUTED,11,{marginBottom:6,letterSpacing:0.5,textTransform:"uppercase",fontWeight:700})}>Min Confidence: {filters.minConf}%</div>
+            <input type="range" min="50" max="95" value={filters.minConf}
+              onChange={e=>{ setActivePreset(null); setFilters(p=>({...p,minConf:+e.target.value})); }}
+              style={{width:"100%",accentColor:BLUE}}/>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:2}}>
+              <span style={fm(MUTED,9)}>50%</span><span style={fm(MUTED,9)}>95%</span>
+            </div>
           </div>
+
           <div>
-            <div style={fm(MUTED,11,{marginBottom:4})}>Verdict Filter</div>
-            <select value={filters.verdict} onChange={e=>setFilters(p=>({...p,verdict:e.target.value}))} style={{background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:12,padding:"6px 10px",borderRadius:4}}>
+            <div style={fm(MUTED,11,{marginBottom:6,letterSpacing:0.5,textTransform:"uppercase",fontWeight:700})}>Min Upside: {filters.minUpside}%</div>
+            <input type="range" min="0" max="50" value={filters.minUpside}
+              onChange={e=>{ setActivePreset(null); setFilters(p=>({...p,minUpside:+e.target.value})); }}
+              style={{width:"100%",accentColor:BLUE}}/>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:2}}>
+              <span style={fm(MUTED,9)}>0%</span><span style={fm(MUTED,9)}>50%</span>
+            </div>
+          </div>
+
+          <div>
+            <div style={fm(MUTED,11,{marginBottom:6,letterSpacing:0.5,textTransform:"uppercase",fontWeight:700})}>Verdict</div>
+            <select value={filters.verdict} onChange={e=>{ setActivePreset(null); setFilters(p=>({...p,verdict:e.target.value})); }}
+              style={{width:"100%",background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:12,padding:"8px 10px",borderRadius:5,outline:"none"}}>
               {["All","STRONG BUY","BUY","SPECULATIVE","HOLD","SELL"].map(v=><option key={v} value={v}>{v}</option>)}
             </select>
           </div>
-          <button onClick={run} disabled={running} style={{background:`linear-gradient(135deg,${BLUE}22,${BLUE}11)`,border:`1px solid ${BLUE}55`,color:BLUE,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"10px 22px",borderRadius:6,cursor:"pointer",textTransform:"uppercase"}}>
-            {running?"⏳ SCANNING...":" RUN SCREENER"}
+
+          <div>
+            <div style={fm(MUTED,11,{marginBottom:6,letterSpacing:0.5,textTransform:"uppercase",fontWeight:700})}>Momentum</div>
+            <select value={filters.momentum} onChange={e=>{ setActivePreset(null); setFilters(p=>({...p,momentum:e.target.value})); }}
+              style={{width:"100%",background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:12,padding:"8px 10px",borderRadius:5,outline:"none"}}>
+              {["All","STRONG","MODERATE","WEAK","NEGATIVE"].map(v=><option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <div style={fm(MUTED,11,{marginBottom:6,letterSpacing:0.5,textTransform:"uppercase",fontWeight:700})}>Sector</div>
+            <select value={filters.sector} onChange={e=>{ setActivePreset(null); setFilters(p=>({...p,sector:e.target.value})); }}
+              style={{width:"100%",background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:12,padding:"8px 10px",borderRadius:5,outline:"none"}}>
+              {sectors.map(s=><option key={s} value={s}>{s} {s!=="All"?`(${(SCREENER_UNIVERSE[s]||[]).length})`:""}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <div style={fm(MUTED,11,{marginBottom:6,letterSpacing:0.5,textTransform:"uppercase",fontWeight:700})}>Max Results: {filters.maxResults}</div>
+            <input type="range" min="5" max="50" step="5" value={filters.maxResults}
+              onChange={e=>setFilters(p=>({...p,maxResults:+e.target.value}))}
+              style={{width:"100%",accentColor:BLUE}}/>
+          </div>
+        </div>
+
+        {/* Custom tickers */}
+        <div style={{marginBottom:16}}>
+          <div style={fm(MUTED,11,{marginBottom:6,letterSpacing:0.5,textTransform:"uppercase",fontWeight:700})}>Custom Ticker List (overrides sector selection)</div>
+          <input placeholder="e.g. AAPL, NVDA, TSLA, MSFT..." value={customTickers}
+            onChange={e=>setCustomTickers(e.target.value)}
+            style={{width:"100%",background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px",borderRadius:5,outline:"none",boxSizing:"border-box"}}/>
+        </div>
+
+        {/* Universe summary + Run */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+          <div style={fm(MUTED,12)}>
+            Scanning: <strong style={{color:WHITE}}>{customTickers.trim() ? customTickers.split(/[,\s]+/).filter(t=>t).length+" custom" : (filters.sector==="All"?Object.values(SCREENER_UNIVERSE).flat().length+" stocks":((SCREENER_UNIVERSE[filters.sector]||[]).length+" stocks in "+filters.sector))}</strong>
+            {running && <span style={{color:BLUE,marginLeft:12}}>— {scanned} / {total} analyzed</span>}
+          </div>
+          <button onClick={run} disabled={running}
+            style={{background:`linear-gradient(135deg,${BLUE},${BLUE}88)`,border:"none",color:"#000",
+              fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:2,padding:"11px 28px",
+              borderRadius:6,cursor:running?"wait":"pointer",opacity:running?0.7:1,fontWeight:900}}>
+            {running?`SCANNING... ${scanned}/${total}`:"RUN SCREENER"}
           </button>
         </div>
-        {running&&<LoadingAnim color={BLUE} message="SCANNING STOCKS..."/>}
+        {running&&(
+          <div style={{marginTop:12}}>
+            <div style={{height:3,background:BORDER,borderRadius:2,overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${total>0?(scanned/total)*100:0}%`,background:`linear-gradient(90deg,${BLUE}88,${BLUE})`,transition:"width 0.3s",borderRadius:2}}/>
+            </div>
+            <LoadingAnim color={BLUE} message={`ANALYZING STOCKS... ${results.length} MATCHES SO FAR`}/>
+          </div>
+        )}
       </div>
+
+      {/* Results */}
       {results.length>0&&(
         <div>
-          <SectionLabel color={BLUE}>Results — {results.length} matches found</SectionLabel>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:BLUE,letterSpacing:2}}>
+              {results.length} MATCH{results.length!==1?"ES":""} FOUND
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <Tag label={`Min ${filters.minConf}% Confidence`} color={BLUE}/>
+              {filters.verdict!=="All"&&<Tag label={filters.verdict} color={GREEN}/>}
+              {filters.sector!=="All"&&<Tag label={filters.sector} color={MUTED}/>}
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(360px,1fr))",gap:14}}>
             {results.map(({ticker,result:r})=>{
-              const c=CONFIDENCE_MAP[r.verdict]||CONFIDENCE_MAP["HOLD"];
+              const c = CONFIDENCE_MAP[r.verdict]||CONFIDENCE_MAP["HOLD"];
+              const isExpanded = expandedTicker===ticker;
               return(
-                <div key={ticker} style={{background:CARD,border:`1px solid ${c.color}33`,borderRadius:10,padding:16}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                    <div>
-                      <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:2,marginRight:8}}>{ticker}</span>
-                      <Tag label={r.verdict} color={c.color}/>
+                <div key={ticker} style={{background:CARD,border:`1px solid ${c.color}44`,borderRadius:10,overflow:"hidden"}}>
+                  {/* Card top */}
+                  <div style={{padding:"14px 16px",background:DIM}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                      <div>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:2}}>{ticker}</span>
+                          <Tag label={r.verdict} color={c.color}/>
+                          {r.momentum&&<Tag label={r.momentum} color={r.momentum==="STRONG"?GREEN:r.momentum==="NEGATIVE"?RED:GOLD}/>}
+                        </div>
+                        <div style={fm(MUTED,12,{marginBottom:4})}>{r.name}</div>
+                        <Tag label={r.sector||filters.sector} color={MUTED}/>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:c.color,lineHeight:1}}>{r.confidence}%</div>
+                        <div style={fm(MUTED,10,{letterSpacing:0.5})}>CONFIDENCE</div>
+                      </div>
                     </div>
-                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:c.color}}>{r.confidence}%</div>
+                    <ScoreBar label="Confidence" value={r.confidence} color={c.color}/>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8,marginBottom:10}}>
+                      {r.price&&<InfoBox label="Price" value={r.price}/>}
+                      {r.priceTarget&&<InfoBox label="Target" value={r.priceTarget} color={GREEN}/>}
+                      {r.upside&&<InfoBox label="Upside" value={r.upside} color={GREEN}/>}
+                      {r.peRatio&&<InfoBox label="P/E" value={r.peRatio}/>}
+                    </div>
+                    {r.whyThisRating&&<p style={fm("#8a9aaa",12,{lineHeight:1.6,marginBottom:10})}>{r.whyThisRating}</p>}
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                      {r.revenueGrowth&&<Tag label={`Rev: ${r.revenueGrowth}`} color={MUTED}/>}
+                      {r.earningsGrowth&&<Tag label={`EPS: ${r.earningsGrowth}`} color={MUTED}/>}
+                      {r.technicalRating&&<Tag label={r.technicalRating} color={r.technicalRating==="BULLISH"?GREEN:r.technicalRating==="BEARISH"?RED:MUTED}/>}
+                      {r.analystConsensus&&<Tag label={`Analysts: ${r.analystConsensus}`} color={MUTED}/>}
+                    </div>
+                    <button onClick={()=>setExpandedTicker(isExpanded?null:ticker)}
+                      style={{width:"100%",background:`${c.color}11`,border:`1px solid ${c.color}44`,color:c.color,
+                        fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,padding:"8px 0",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}>
+                      {isExpanded?"HIDE CATALYSTS":"VIEW CATALYSTS"}
+                    </button>
                   </div>
-                  <ScoreBar label="Confidence" value={r.confidence} color={c.color}/>
-                  {r.whyThisRating&&<p style={fm(MUTED,12,{lineHeight:1.6,marginTop:8})}>{r.whyThisRating?.slice(0,150)}...</p>}
+                  {isExpanded&&r.catalysts?.length>0&&(
+                    <div style={{padding:"12px 16px",borderTop:`1px solid ${BORDER}`}}>
+                      <SectionLabel color={GREEN}>Catalysts</SectionLabel>
+                      {r.catalysts.map((cat,i)=>(
+                        <div key={i} style={fm("#7aaa8a",12,{marginBottom:4,lineHeight:1.6})}>• {cat}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
+        </div>
+      )}
+      {!running&&results.length===0&&scanned>0&&(
+        <div style={{textAlign:"center",padding:"32px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:13}}>
+          No stocks matched your current filters. Try lowering the confidence threshold or broadening the sector.
         </div>
       )}
     </div>
@@ -1723,77 +1949,318 @@ function Screener({subscribed, onPaywall}){
 
 // ─── PORTFOLIO TRACKER ────────────────────────────────────────────────────────
 function Portfolio({subscribed, onPaywall}){
-  const [holdings,setHoldings]=useState([{ticker:"AAPL",shares:10,avgCost:150},{ticker:"NVDA",shares:5,avgCost:400}]);
-  const [newTicker,setNewTicker]=useState("");
-  const [newShares,setNewShares]=useState("");
-  const [newCost,setNewCost]=useState("");
-  const [analyses,setAnalyses]=useState({});
-  const [loading,setLoading]=useState(null);
+  const [holdings, setHoldings] = useState([
+    {ticker:"AAPL", shares:10, avgCost:150},
+    {ticker:"NVDA", shares:5,  avgCost:400},
+  ]);
+  const [newTicker,  setNewTicker]  = useState("");
+  const [newShares,  setNewShares]  = useState("");
+  const [newCost,    setNewCost]    = useState("");
+  const [analyses,   setAnalyses]   = useState({});
+  const [livePrices, setLivePrices] = useState({});
+  const [loading,    setLoading]    = useState(null);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [sortBy,     setSortBy]     = useState("value"); // value | gainPct | ticker | verdict
+
+  // Fetch live prices for all holdings via Yahoo Finance proxy
+  const fetchPrices = async (tickers) => {
+    setPriceLoading(true);
+    const prices = {};
+    await Promise.allSettled(tickers.map(async (sym) => {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=2d`;
+      const proxies = [
+        `https://corsproxy.io/?${encodeURIComponent(url)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+      ];
+      for(const proxy of proxies){
+        try{
+          const res = await fetch(proxy);
+          if(!res.ok) continue;
+          const data = await res.json();
+          const m = data?.chart?.result?.[0]?.meta;
+          if(!m) continue;
+          const price = m.regularMarketPrice ?? m.previousClose;
+          const prev  = m.previousClose ?? m.chartPreviousClose;
+          if(!price) continue;
+          const chg = price - prev;
+          prices[sym] = {
+            price,
+            prev,
+            change: chg,
+            changePct: prev ? (chg/prev)*100 : 0,
+            isUp: chg >= 0,
+          };
+          break;
+        }catch(e){ continue; }
+      }
+    }));
+    setLivePrices(p=>({...p,...prices}));
+    setPriceLoading(false);
+  };
+
+  // Auto-fetch prices on mount and when holdings change
+  useEffect(()=>{
+    if(holdings.length>0) fetchPrices(holdings.map(h=>h.ticker));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[holdings.length]);
 
   const addHolding = () => {
     if(!newTicker.trim()) return;
-    setHoldings(p=>[...p,{ticker:newTicker.toUpperCase(),shares:+newShares||1,avgCost:+newCost||0}]);
+    const ticker = newTicker.toUpperCase().trim();
+    if(holdings.find(h=>h.ticker===ticker)){ setNewTicker(""); return; }
+    const newH = {ticker, shares:+newShares||1, avgCost:+newCost||0};
+    setHoldings(p=>[...p, newH]);
+    fetchPrices([ticker]);
     setNewTicker(""); setNewShares(""); setNewCost("");
+  };
+
+  const removeHolding = (ticker) => {
+    setHoldings(p=>p.filter(h=>h.ticker!==ticker));
+    setAnalyses(a=>{ const n={...a}; delete n[ticker]; return n; });
+    setLivePrices(p=>{ const n={...p}; delete n[ticker]; return n; });
+  };
+
+  const analyzeOne = async (ticker) => {
+    if(!BETA_MODE&&!subscribed){ onPaywall(); return; }
+    setLoading(ticker);
+    try{
+      const h = holdings.find(x=>x.ticker===ticker);
+      const lp = livePrices[ticker];
+      const r = await callAI(STOCK_SYSTEM,
+        `Analyze ${ticker}. Current price: ${lp?`$${lp.price.toFixed(2)}`:"unknown"}. User holds ${h?.shares||""} shares at avg cost $${h?.avgCost||""}. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`
+      );
+      setAnalyses(a=>({...a,[ticker]:r}));
+    }catch(e){}
+    setLoading(null);
   };
 
   const analyzeAll = async () => {
     if(!BETA_MODE&&!subscribed){ onPaywall(); return; }
     for(const h of holdings){
-      if(analyses[h.ticker]) continue;
-      setLoading(h.ticker);
-      try{
-        const r=await callAI(STOCK_SYSTEM,`Analyze ${h.ticker}. Today: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}.`);
-        setAnalyses(a=>({...a,[h.ticker]:r}));
-      }catch{}
-      setLoading(null);
+      if(!analyses[h.ticker]) await analyzeOne(h.ticker);
     }
   };
 
+  // Portfolio math
+  const enriched = holdings.map(h=>{
+    const lp = livePrices[h.ticker];
+    const currentPrice = lp?.price ?? 0;
+    const costBasis    = h.avgCost * h.shares;
+    const currentValue = currentPrice * h.shares;
+    const gainLoss     = currentValue - costBasis;
+    const gainPct      = costBasis>0 ? (gainLoss/costBasis)*100 : 0;
+    const dayChange    = lp ? lp.change * h.shares : 0;
+    const dayChangePct = lp?.changePct ?? 0;
+    return { ...h, currentPrice, costBasis, currentValue, gainLoss, gainPct, dayChange, dayChangePct, isUp: gainLoss>=0 };
+  });
+
+  const totalValue     = enriched.reduce((s,h)=>s+h.currentValue, 0);
+  const totalCost      = enriched.reduce((s,h)=>s+h.costBasis, 0);
+  const totalGainLoss  = totalValue - totalCost;
+  const totalGainPct   = totalCost>0 ? (totalGainLoss/totalCost)*100 : 0;
+  const dayTotal       = enriched.reduce((s,h)=>s+h.dayChange, 0);
+
+  const sorted = [...enriched].sort((a,b)=>{
+    if(sortBy==="value")   return b.currentValue - a.currentValue;
+    if(sortBy==="gainPct") return b.gainPct - a.gainPct;
+    if(sortBy==="ticker")  return a.ticker.localeCompare(b.ticker);
+    if(sortBy==="verdict"){
+      const order = {"STRONG BUY":0,"BUY":1,"SPECULATIVE":2,"HOLD":3,"SELL":4,"STRONG SELL":5};
+      const av = analyses[a.ticker]?.verdict;
+      const bv = analyses[b.ticker]?.verdict;
+      return (order[av]??9) - (order[bv]??9);
+    }
+    return 0;
+  });
+
+  const fmt = (n) => n>=1000000 ? `$${(n/1000000).toFixed(2)}M` : n>=1000 ? `$${(n/1000).toFixed(1)}K` : `$${n.toFixed(2)}`;
+  const pctFmt = (n) => `${n>=0?"+":""}${n.toFixed(2)}%`;
+
   return(
     <div>
-      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:GREEN,letterSpacing:3,textShadow:`0 0 20px ${GREEN}44`,marginBottom:6}}>Portfolio Tracker</div>
-      <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600,marginBottom:20})}>Track your holdings and get analysis on each position.</p>
-      {/* Add holding */}
-      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:18,marginBottom:20}}>
-        <SectionLabel color={GREEN}>Add Holding</SectionLabel>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-          <input placeholder="Ticker" value={newTicker} onChange={e=>setNewTicker(e.target.value.toUpperCase())} style={{background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,padding:"8px 12px",borderRadius:5,width:100,outline:"none"}}/>
-          <input placeholder="Shares" value={newShares} onChange={e=>setNewShares(e.target.value)} type="number" style={{background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:5,width:100,outline:"none"}}/>
-          <input placeholder="Avg Cost $" value={newCost} onChange={e=>setNewCost(e.target.value)} type="number" style={{background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"8px 12px",borderRadius:5,width:110,outline:"none"}}/>
-          <button onClick={addHolding} style={{background:`${GREEN}18`,border:`1px solid ${GREEN}44`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"9px 16px",borderRadius:5,cursor:"pointer"}}>+ Add</button>
-          <button onClick={analyzeAll} style={{background:`linear-gradient(135deg,${GREEN}22,${GREEN}11)`,border:`1px solid ${GREEN}55`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"9px 18px",borderRadius:5,cursor:"pointer",textTransform:"uppercase"}}> Analyze All</button>
-        </div>
-      </div>
-      {/* Holdings list */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:14}}>
-        {holdings.map(h=>{
-          const r=analyses[h.ticker];
-          const c=r?(CONFIDENCE_MAP[r.verdict]||CONFIDENCE_MAP["HOLD"]):null;
-          const isLoading=loading===h.ticker;
-          return(
-            <div key={h.ticker} style={{background:CARD,border:`1px solid ${c?c.color+"44":BORDER}`,borderRadius:10,padding:16}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-                <div>
-                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:2}}>{h.ticker}</span>
-                  <div style={fm(MUTED,12,{marginTop:3})}>{h.shares} shares @ ${h.avgCost}</div>
-                </div>
-                <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                  {r&&<Tag label={r.verdict} color={c.color}/>}
-                  <button onClick={()=>setHoldings(p=>p.filter(x=>x.ticker!==h.ticker))} style={{background:"none",border:"none",color:MUTED,cursor:"pointer",fontSize:14}}></button>
+      {/* Header */}
+      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:GREEN,letterSpacing:3,textShadow:`0 0 20px ${GREEN}44`,marginBottom:4}}>Portfolio Tracker</div>
+      <p style={fm(MUTED,13,{lineHeight:1.7,maxWidth:600,marginBottom:20})}>Real-time P&L, position sizing, and live analysis on every holding.</p>
+
+      {/* Portfolio Summary */}
+      {holdings.length>0&&(
+        <div style={{background:CARD,border:`1px solid ${totalGainLoss>=0?GREEN+"44":RED+"44"}`,borderRadius:10,padding:"16px 20px",marginBottom:20}}>
+          <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:16,alignItems:"center"}}>
+            <div>
+              <div style={fm(MUTED,11,{letterSpacing:1,textTransform:"uppercase",fontWeight:700,marginBottom:4})}>Total Portfolio Value</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:36,color:WHITE,letterSpacing:2,lineHeight:1}}>{fmt(totalValue)}</div>
+              <div style={{display:"flex",gap:12,marginTop:6,flexWrap:"wrap"}}>
+                <span style={fm(totalGainLoss>=0?GREEN:RED,13,{fontWeight:700})}>{totalGainLoss>=0?"+":""}{fmt(totalGainLoss)} ({pctFmt(totalGainPct)}) total</span>
+                <span style={fm(dayTotal>=0?GREEN:RED,13)}>{dayTotal>=0?"+":""}{fmt(dayTotal)} today</span>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+              <div style={{textAlign:"center"}}>
+                <div style={fm(MUTED,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:4})}>Cost Basis</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:MUTED}}>{fmt(totalCost)}</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={fm(MUTED,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:4})}>Positions</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:WHITE}}>{holdings.length}</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={fm(MUTED,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:4})}>Prices</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:14,color:priceLoading?GOLD:GREEN}}>
+                  {priceLoading?"UPDATING...":"LIVE"}
                 </div>
               </div>
-              <LiveMiniChart ticker={h.ticker} color={c?c.color:GREEN}/>
-              {isLoading&&<LoadingAnim color={GREEN} message="ANALYZING..."/>}
+            </div>
+          </div>
+          {/* Weight bars */}
+          {totalValue>0&&(
+            <div style={{marginTop:16}}>
+              <div style={fm(MUTED,10,{letterSpacing:1,textTransform:"uppercase",marginBottom:6,fontWeight:700})}>Portfolio Allocation</div>
+              <div style={{display:"flex",height:6,borderRadius:3,overflow:"hidden",gap:1}}>
+                {sorted.map((h,i)=>{
+                  const weight = totalValue>0?(h.currentValue/totalValue)*100:0;
+                  const colors=[GREEN,BLUE,GOLD,ORANGE,PURPLE,CYAN,PINK,RED];
+                  return <div key={h.ticker} style={{width:`${weight}%`,background:colors[i%colors.length],transition:"width 0.5s"}} title={`${h.ticker}: ${weight.toFixed(1)}%`}/>;
+                })}
+              </div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:6}}>
+                {sorted.map((h,i)=>{
+                  const weight = totalValue>0?(h.currentValue/totalValue)*100:0;
+                  const colors=[GREEN,BLUE,GOLD,ORANGE,PURPLE,CYAN,PINK,RED];
+                  return <span key={h.ticker} style={fm(colors[i%colors.length],10)}>{h.ticker} {weight.toFixed(0)}%</span>;
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add Holding + Controls */}
+      <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:10,padding:18,marginBottom:20}}>
+        <SectionLabel color={GREEN}>Add Position</SectionLabel>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:12}}>
+          <input placeholder="Ticker" value={newTicker} onChange={e=>setNewTicker(e.target.value.toUpperCase())}
+            onKeyDown={e=>e.key==="Enter"&&addHolding()}
+            style={{background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,padding:"9px 12px",borderRadius:5,width:110,outline:"none"}}/>
+          <input placeholder="Shares" value={newShares} onChange={e=>setNewShares(e.target.value)} type="number"
+            style={{background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px",borderRadius:5,width:100,outline:"none"}}/>
+          <input placeholder="Avg Cost $" value={newCost} onChange={e=>setNewCost(e.target.value)} type="number"
+            style={{background:DIM,border:`1px solid ${BORDER}`,color:WHITE,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:"9px 12px",borderRadius:5,width:120,outline:"none"}}/>
+          <button onClick={addHolding} style={{background:`${GREEN}18`,border:`1px solid ${GREEN}44`,color:GREEN,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"10px 18px",borderRadius:5,cursor:"pointer"}}>ADD</button>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <button onClick={analyzeAll} style={{background:`linear-gradient(135deg,${GREEN},${GREEN}88)`,border:"none",color:"#000",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:1,padding:"10px 22px",borderRadius:5,cursor:"pointer",fontWeight:900}}>
+            ANALYZE ALL POSITIONS
+          </button>
+          <button onClick={()=>fetchPrices(holdings.map(h=>h.ticker))} style={{background:DIM,border:`1px solid ${BORDER}`,color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"10px 16px",borderRadius:5,cursor:"pointer"}}>
+            {priceLoading?"UPDATING PRICES...":"REFRESH PRICES"}
+          </button>
+          <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center"}}>
+            <span style={fm(MUTED,11)}>Sort:</span>
+            {["value","gainPct","ticker","verdict"].map(s=>(
+              <button key={s} onClick={()=>setSortBy(s)} style={{background:sortBy===s?`${BLUE}22`:DIM,border:`1px solid ${sortBy===s?BLUE+"55":BORDER}`,color:sortBy===s?BLUE:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,padding:"5px 12px",borderRadius:4,cursor:"pointer"}}>
+                {s==="gainPct"?"P&L":s==="verdict"?"Rating":s.charAt(0).toUpperCase()+s.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Holdings Grid */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:14}}>
+        {sorted.map(h=>{
+          const r = analyses[h.ticker];
+          const c = r?(CONFIDENCE_MAP[r.verdict]||CONFIDENCE_MAP["HOLD"]):null;
+          const isLoading = loading===h.ticker;
+          const lp = livePrices[h.ticker];
+
+          return(
+            <div key={h.ticker} style={{background:CARD,border:`1px solid ${c?c.color+"44":h.isUp?GREEN+"22":RED+"22"}`,borderRadius:10,overflow:"hidden"}}>
+              {/* Position Header */}
+              <div style={{padding:"14px 16px",background:DIM}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                      <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:2}}>{h.ticker}</span>
+                      {r&&<Tag label={r.verdict} color={c.color}/>}
+                    </div>
+                    <div style={fm(MUTED,12)}>{h.shares} shares @ ${h.avgCost.toFixed(2)} avg</div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    {lp
+                      ? <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:WHITE,letterSpacing:1}}>${lp.price.toFixed(2)}</div>
+                      : <div style={fm(MUTED,12)}>Fetching...</div>
+                    }
+                    {lp&&<div style={fm(lp.isUp?GREEN:RED,12,{fontWeight:700})}>{lp.isUp?"+":""}{lp.changePct.toFixed(2)}% today</div>}
+                    <button onClick={()=>removeHolding(h.ticker)} style={{background:"none",border:"none",color:MUTED,cursor:"pointer",fontSize:11,marginTop:2,fontFamily:"'DM Sans',sans-serif"}}>REMOVE</button>
+                  </div>
+                </div>
+
+                {/* P&L Row */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
+                  <div style={{background:CARD,borderRadius:5,padding:"8px 10px",borderLeft:`2px solid ${h.isUp?GREEN:RED}`}}>
+                    <div style={fm(MUTED,9,{letterSpacing:0.5,textTransform:"uppercase",marginBottom:2})}>Market Value</div>
+                    <div style={fm(WHITE,13,{fontWeight:700})}>{fmt(h.currentValue)}</div>
+                  </div>
+                  <div style={{background:CARD,borderRadius:5,padding:"8px 10px",borderLeft:`2px solid ${h.isUp?GREEN:RED}`}}>
+                    <div style={fm(MUTED,9,{letterSpacing:0.5,textTransform:"uppercase",marginBottom:2})}>Total P&L</div>
+                    <div style={fm(h.isUp?GREEN:RED,13,{fontWeight:700})}>{h.isUp?"+":""}{fmt(h.gainLoss)}</div>
+                    <div style={fm(h.isUp?GREEN:RED,10)}>{pctFmt(h.gainPct)}</div>
+                  </div>
+                  <div style={{background:CARD,borderRadius:5,padding:"8px 10px",borderLeft:`2px solid ${h.dayChange>=0?GREEN:RED}`}}>
+                    <div style={fm(MUTED,9,{letterSpacing:0.5,textTransform:"uppercase",marginBottom:2})}>Today</div>
+                    <div style={fm(h.dayChange>=0?GREEN:RED,13,{fontWeight:700})}>{h.dayChange>=0?"+":""}{fmt(h.dayChange)}</div>
+                    <div style={fm(h.dayChange>=0?GREEN:RED,10)}>{pctFmt(h.dayChangePct)}</div>
+                  </div>
+                </div>
+
+                {/* Weight */}
+                {totalValue>0&&(
+                  <div style={{marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                      <span style={fm(MUTED,10,{letterSpacing:0.5,textTransform:"uppercase"})}>Portfolio Weight</span>
+                      <span style={fm(WHITE,10,{fontWeight:700})}>{((h.currentValue/totalValue)*100).toFixed(1)}%</span>
+                    </div>
+                    <div style={{height:3,background:BORDER,borderRadius:2}}>
+                      <div style={{height:"100%",width:`${(h.currentValue/totalValue)*100}%`,background:h.isUp?GREEN:RED,borderRadius:2}}/>
+                    </div>
+                  </div>
+                )}
+
+                {/* Chart */}
+                <LiveMiniChart ticker={h.ticker} color={c?c.color:h.isUp?GREEN:RED}/>
+
+                {/* Analysis button */}
+                <button onClick={()=>analyzeOne(h.ticker)} disabled={isLoading}
+                  style={{width:"100%",marginTop:10,background:`linear-gradient(135deg,${c?c.color:GREEN}22,${c?c.color:GREEN}11)`,
+                    border:`1px solid ${c?c.color:GREEN}55`,color:c?c.color:GREEN,fontFamily:"'DM Sans',sans-serif",
+                    fontSize:11,fontWeight:700,padding:"9px 0",borderRadius:5,cursor:isLoading?"wait":"pointer",textTransform:"uppercase"}}>
+                  {isLoading?"ANALYZING...":r?"REFRESH ANALYSIS":"GET FULL ANALYSIS"}
+                </button>
+              </div>
+
+              {/* Analysis result */}
+              {isLoading&&<div style={{padding:"10px 16px"}}><LoadingAnim color={c?c.color:GREEN} message="ANALYZING POSITION..."/></div>}
               {r&&!isLoading&&(
-                <div style={{marginTop:10}}>
+                <div style={{padding:"12px 16px",borderTop:`1px solid ${BORDER}`}}>
                   <ScoreBar label="Confidence" value={r.confidence||0} color={c.color}/>
-                  {r.whyThisRating&&<p style={fm(MUTED,12,{lineHeight:1.6,marginTop:8})}>{r.whyThisRating?.slice(0,120)}...</p>}
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8,marginBottom:8}}>
+                    {r.priceTarget&&<InfoBox label="Target" value={r.priceTarget} color={GREEN}/>}
+                    {r.upside&&<InfoBox label="Upside" value={r.upside} color={GREEN}/>}
+                    {r.nextEarnings&&<InfoBox label="Earnings" value={r.nextEarnings} color={GOLD}/>}
+                  </div>
+                  {r.whyThisRating&&<p style={fm("#8a9aaa",12,{lineHeight:1.6})}>{r.whyThisRating}</p>}
                 </div>
               )}
             </div>
           );
         })}
       </div>
+
+      {holdings.length===0&&(
+        <div style={{textAlign:"center",padding:"48px 0",color:MUTED,fontFamily:"'DM Sans',sans-serif",fontSize:13}}>
+          Add your first position above to start tracking your portfolio.
+        </div>
+      )}
     </div>
   );
 }
